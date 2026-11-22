@@ -1,0 +1,12 @@
+node_modules
+dist
+dev-dist
+*.local
+.env
+.env.*
+!.env.example
+coverage
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db

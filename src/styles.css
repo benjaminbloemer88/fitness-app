@@ -1,0 +1,697 @@
+/*
+ * Gestaltung: Mobile-first, für das Gym gedacht.
+ * Dunkel als Standard, hoher Kontrast, große Touch-Ziele (mind. 48–64 px).
+ * Alle Farben als Variablen, damit „Hell“ und „System“ nur die Werte tauschen.
+ */
+
+:root {
+  --bg: #0f1115;
+  --flaeche: #181b22;
+  --flaeche-2: #232831;
+  --rand: #313743;
+  --text: #f3f5f8;
+  --text-2: #a7afbc;
+  --akzent: #a3e635;
+  --akzent-text: #10130a;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --fehler: #f87171;
+  --info: #7cb4ff;
+  --schatten: 0 6px 24px rgb(0 0 0 / 0.35);
+  --radius: 16px;
+  --nav-hoehe: 68px;
+  /* Diagramm-Farben (validierte Palette, dunkle Stufen) */
+  --serie-1: #3987e5;
+  --serie-2: #d95926;
+  --raster: #2c2c2a;
+  --achse: #898781;
+  color-scheme: dark;
+}
+
+:root[data-theme='hell'] {
+  --bg: #f4f5f7;
+  --flaeche: #ffffff;
+  --flaeche-2: #eceef2;
+  --rand: #d5d9e0;
+  --text: #11151c;
+  --text-2: #586172;
+  --akzent: #3f7d0b;
+  --akzent-text: #ffffff;
+  --ok: #15803d;
+  --warn: #a16207;
+  --fehler: #c62828;
+  --info: #1d5fd1;
+  --schatten: 0 6px 24px rgb(0 0 0 / 0.08);
+  --serie-1: #2a78d6;
+  --serie-2: #eb6834;
+  --raster: #e1e0d9;
+  --achse: #898781;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-theme='system'] {
+    --bg: #f4f5f7;
+    --flaeche: #ffffff;
+    --flaeche-2: #eceef2;
+    --rand: #d5d9e0;
+    --text: #11151c;
+    --text-2: #586172;
+    --akzent: #3f7d0b;
+    --akzent-text: #ffffff;
+    --ok: #15803d;
+    --warn: #a16207;
+    --fehler: #c62828;
+    --info: #1d5fd1;
+    --schatten: 0 6px 24px rgb(0 0 0 / 0.08);
+    --serie-1: #2a78d6;
+    --serie-2: #eb6834;
+    --raster: #e1e0d9;
+    --achse: #898781;
+    color-scheme: light;
+  }
+}
+
+.wertetabelle {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.wertetabelle th,
+.wertetabelle td {
+  text-align: right;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--rand);
+}
+.wertetabelle th:first-child,
+.wertetabelle td:first-child {
+  text-align: left;
+}
+details > summary {
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: 0.85rem;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 17px;
+  line-height: 1.4;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+h1 {
+  font-size: 1.6rem;
+  margin: 0;
+  line-height: 1.2;
+}
+h2 {
+  font-size: 1.2rem;
+  margin: 0 0 8px;
+}
+h3 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+p {
+  margin: 0 0 8px;
+}
+
+.seite {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: calc(12px + env(safe-area-inset-top)) 16px calc(var(--nav-hoehe) + 24px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.seite.ohne-nav {
+  padding-bottom: calc(140px + env(safe-area-inset-bottom));
+}
+
+.kopf {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.kopf .unterzeile {
+  color: var(--text-2);
+  margin-top: 2px;
+}
+.kopf-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.gedaempft {
+  color: var(--text-2);
+}
+.klein {
+  font-size: 0.85rem;
+}
+.fett {
+  font-weight: 700;
+}
+.zentriert {
+  text-align: center;
+}
+.zeile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.zeile.zwischen {
+  justify-content: space-between;
+}
+.zeile.umbruch {
+  flex-wrap: wrap;
+}
+.stapel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ───────── Karten und Hinweise ───────── */
+
+.karte {
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.karte.hervorgehoben {
+  border-color: var(--akzent);
+}
+
+.hinweis {
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--info) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--info) 40%, transparent);
+  font-size: 0.92rem;
+}
+.hinweis.warn {
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  border-color: color-mix(in srgb, var(--warn) 45%, transparent);
+}
+.hinweis.fehler {
+  background: color-mix(in srgb, var(--fehler) 14%, transparent);
+  border-color: color-mix(in srgb, var(--fehler) 45%, transparent);
+}
+.hinweis.ok {
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
+  border-color: color-mix(in srgb, var(--ok) 40%, transparent);
+}
+
+/* ───────── Knöpfe ───────── */
+
+.knopf {
+  appearance: none;
+  border: 1px solid var(--rand);
+  background: var(--flaeche-2);
+  border-radius: 14px;
+  min-height: 52px;
+  padding: 10px 18px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  touch-action: manipulation;
+  user-select: none;
+}
+.knopf:active {
+  transform: scale(0.98);
+}
+.knopf:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.knopf.primaer {
+  background: var(--akzent);
+  color: var(--akzent-text);
+  border-color: var(--akzent);
+}
+.knopf.gefahr {
+  color: var(--fehler);
+  border-color: color-mix(in srgb, var(--fehler) 50%, transparent);
+  background: transparent;
+}
+.knopf.leise {
+  background: transparent;
+}
+.knopf.gross {
+  min-height: 64px;
+  font-size: 1.15rem;
+  border-radius: 16px;
+}
+.knopf.block {
+  width: 100%;
+}
+.knopf.rund {
+  min-width: 52px;
+  padding: 0;
+  border-radius: 50%;
+}
+.knopf.icon {
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+}
+
+.chip {
+  appearance: none;
+  border: 1px solid var(--rand);
+  background: var(--flaeche-2);
+  border-radius: 999px;
+  min-height: 44px;
+  padding: 6px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.chip.aktiv {
+  background: var(--akzent);
+  color: var(--akzent-text);
+  border-color: var(--akzent);
+}
+
+.abzeichen {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid var(--rand);
+  background: var(--flaeche-2);
+  white-space: nowrap;
+  text-decoration: none;
+}
+.abzeichen.ok {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 45%, transparent);
+}
+.abzeichen.warn {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 45%, transparent);
+}
+.abzeichen.fehler {
+  color: var(--fehler);
+  border-color: color-mix(in srgb, var(--fehler) 45%, transparent);
+}
+.abzeichen.info {
+  color: var(--info);
+  border-color: color-mix(in srgb, var(--info) 45%, transparent);
+}
+
+/* ───────── Formulare ───────── */
+
+.feld {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.feld > span {
+  font-weight: 600;
+  color: var(--text-2);
+  font-size: 0.9rem;
+}
+.eingabe {
+  background: var(--flaeche-2);
+  border: 1px solid var(--rand);
+  border-radius: 12px;
+  min-height: 52px;
+  padding: 10px 14px;
+  width: 100%;
+}
+.eingabe:focus,
+.knopf:focus-visible,
+.chip:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 2px;
+}
+textarea.eingabe {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.schalter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+}
+.schalter input {
+  width: 28px;
+  height: 28px;
+  accent-color: var(--akzent);
+}
+
+input[type='range'].regler {
+  width: 100%;
+  height: 48px;
+  accent-color: var(--akzent);
+}
+
+/* ───────── Stepper (− Wert +) ───────── */
+
+.stepper {
+  display: grid;
+  grid-template-columns: 60px 1fr 60px;
+  align-items: center;
+  gap: 8px;
+}
+.stepper .knopf {
+  min-height: 60px;
+  font-size: 1.6rem;
+  padding: 0;
+}
+.stepper-wert {
+  text-align: center;
+  font-size: 1.7rem;
+  font-weight: 800;
+  background: transparent;
+  border: 1px dashed transparent;
+  border-radius: 12px;
+  min-height: 60px;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+.stepper-wert:focus {
+  border-color: var(--akzent);
+  outline: none;
+  background: var(--flaeche-2);
+}
+.stepper-label {
+  font-size: 0.85rem;
+  color: var(--text-2);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+/* ───────── Plan ───────── */
+
+.uebungsliste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.uebungsliste li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rand);
+}
+.uebungsliste li:last-child {
+  border-bottom: none;
+}
+.ziel {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ───────── Training ───────── */
+
+.uebung {
+  scroll-margin-top: 12px;
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.uebung.offen {
+  border-color: var(--akzent);
+}
+.uebung.fertig {
+  opacity: 0.75;
+}
+.uebung-kopf {
+  width: 100%;
+  appearance: none;
+  background: transparent;
+  border: none;
+  text-align: left;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  min-height: 64px;
+}
+.uebung-koerper {
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.satz {
+  appearance: none;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--flaeche-2);
+  border: 1px solid transparent;
+  min-height: 52px;
+  text-align: left;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.satz.erledigt {
+  border-color: color-mix(in srgb, var(--ok) 45%, transparent);
+}
+.satz.aktiv {
+  border-color: var(--akzent);
+}
+.satz .haken {
+  color: var(--ok);
+  font-weight: 800;
+}
+.satz-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--akzent);
+}
+
+.unten-fixiert {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--rand);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  z-index: 20;
+}
+.unten-fixiert-innen {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pausenleiste {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 8px;
+  background: var(--flaeche);
+  border: 1px solid var(--akzent);
+  border-radius: 16px;
+  padding: 8px 10px 8px 16px;
+}
+.pausenleiste.vorbei {
+  border-color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 18%, var(--flaeche));
+}
+.pausenzeit {
+  font-size: 2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ───────── Woche ───────── */
+
+.wochentag {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  min-height: 64px;
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-radius: 14px;
+  text-decoration: none;
+  color: inherit;
+}
+.wochentag.heute {
+  border-color: var(--akzent);
+}
+.wochentag .datum {
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+/* ───────── Log-Vorschau ───────── */
+
+.logvorschau {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 0.82rem;
+  background: var(--flaeche-2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  overflow-wrap: anywhere;
+}
+.logvorschau dt {
+  color: var(--text-2);
+}
+.logvorschau dd {
+  margin: 0;
+}
+
+/* ───────── Navigation unten ───────── */
+
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  background: var(--flaeche);
+  border-top: 1px solid var(--rand);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.bottom-nav ul {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 640px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+.bottom-nav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: var(--nav-hoehe);
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.bottom-nav a.active {
+  color: var(--akzent);
+}
+.bottom-nav svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* ───────── Dialog ───────── */
+
+.dialog-hintergrund {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.6);
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.dialog {
+  background: var(--flaeche);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ───────── Diagramme ───────── */
+
+.diagramm {
+  width: 100%;
+  height: 220px;
+}
+.legende {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--text-2);
+}
+.legende i {
+  display: inline-block;
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.update-banner {
+  position: fixed;
+  top: calc(8px + env(safe-area-inset-top));
+  left: 16px;
+  right: 16px;
+  z-index: 60;
+  max-width: 608px;
+  margin: 0 auto;
+  box-shadow: var(--schatten);
+}
