@@ -3,7 +3,10 @@
  * Wird auf „Heute“, im Tagesdetail und im Verlauf genutzt.
  */
 import { useNavigate } from 'react-router';
+import { db } from '../../db/db';
 import { loescheEinheit } from '../../db/einheiten';
+import { synchronisieren } from '../../sync/syncDienst';
+import { einreihen } from '../../sync/syncQueue';
 import { formatTagKurz } from '../../domain/dates';
 import type { Einheit } from '../../domain/einheit';
 import { erzeugeLogZeile } from '../../domain/logFormat';
@@ -29,6 +32,12 @@ export function EinheitKurz({ einheit, zeigeDatum = false }: { einheit: Einheit;
   const zeile = einheit.status === 'laeuft' ? null : erzeugeLogZeile(einheit);
 
   const bearbeiten = () => navigate(einheit.typ === 'lauf' ? `/lauf/${einheit.id}` : `/training/${einheit.id}`);
+  // Nach einem Fehler (oder wenn die Zeile im Doc fehlt) neu anhängen. Die Brücke verhindert Doppelte.
+  const erneutSenden = async () => {
+    await einreihen(db, einheit.id, 'anhaengen');
+    await synchronisieren().catch(() => undefined);
+  };
+
   const loeschen = async () => {
     if (!window.confirm(`„${einheit.titel}“ vom ${formatTagKurz(einheit.datum)} wirklich löschen? Das lässt sich nicht rückgängig machen.`)) return;
     try {
@@ -68,6 +77,11 @@ export function EinheitKurz({ einheit, zeigeDatum = false }: { einheit: Einheit;
             Bearbeiten
           </button>
         ) : null}
+        {einheit.sync === 'fehler' && (
+          <button className="knopf" onClick={() => void erneutSenden()}>
+            Erneut senden
+          </button>
+        )}
         {einheit.sync !== 'synchronisiert' && (
           <button className="knopf gefahr" onClick={loeschen}>
             Löschen

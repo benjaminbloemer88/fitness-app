@@ -6,7 +6,7 @@ wöchentliche „Trainingscoach“ pflegt.
 
 - Läuft komplett offline (Service Worker + IndexedDB); Einträge werden sofort lokal gespeichert.
 - Log-Zeilen entstehen exakt im Format, das der Coach auswertet (siehe unten).
-- Kein eigenes Backend. Der Sync zum Doc läuft über eine kleine Apps-Script-Brücke im Doc (Phase 2).
+- Kein eigenes Backend. Der Sync zum Doc läuft über eine kleine Apps-Script-Brücke im Doc.
 
 ## Stand
 
@@ -15,12 +15,31 @@ wöchentliche „Trainingscoach“ pflegt.
 | Heute, Workout-Modus, Lauf, Abschluss, Ausgelassen, Woche | ✅ |
 | Verlauf (Top-Gewicht, 1RM, Volumen, Pace, Gefühl, Einheiten/Woche) | ✅ |
 | Einstellungen, Backup (Export/Import JSON) | ✅ |
-| Plan aus dem Doc lesen (JSON + Fallback-Tabelle) | ✅ Logik + Tests · ⏳ Anbindung |
-| Sync-Warteschlange (keine Doppelten über `[app:xxxx]`) | ✅ Logik + Tests · ⏳ Anbindung |
-| Apps-Script-Brücke, Import alter Log-Zeilen | ⏳ nächster Schritt |
+| Apps-Script-Brücke (`apps-script/Code.gs`) | ✅ inkl. Tests gegen ein nachgebautes Doc |
+| Plan aus dem Doc lesen (JSON + Fallback-Tabelle), einmalige Plan-Daten-Erzeugung | ✅ |
+| Sync-Warteschlange (automatisch, keine Doppelten über `[app:xxxx]`), Korrekturen | ✅ |
+| Import der Log-Zeilen für den Verlauf, Nachkontrolle eigener Zeilen | ✅ |
 
-Bis die Brücke steht, nutzt die App den Plan 23.–29.11.2026 als Testdaten. Alles, was du erfasst,
-bleibt in der Warteschlange und wird später automatisch ins Doc übertragen.
+Ohne eingerichtete Brücke nutzt die App den Plan 23.–29.11.2026 als Testdaten; alles, was du
+erfasst, wartet lokal und wird nach der Einrichtung automatisch ins Doc übertragen.
+
+## Doc-Sync
+
+Einrichtung Schritt für Schritt: **[apps-script/EINRICHTUNG.md](apps-script/EINRICHTUNG.md)**.
+
+Ablauf:
+
+- **Lesen:** Die Brücke liefert Überschriften, Absätze und Tabellen. Die App sucht den Text
+  zwischen `PLAN-JSON-START` und `PLAN-JSON-END`, repariert typografische Anführungszeichen und
+  Markdown-Reste (`woche\_von`) und prüft ihn mit Zod. Fehlt der Block oder ist er ungültig, liest
+  die App die Plantabelle (Fallback) und zeigt einen Hinweis.
+- **Schreiben:** Abgeschlossene Einheiten landen sofort lokal und in der Warteschlange. Sobald die
+  App online ist, gehen sie an die Brücke. Die Brücke liest das Doc bei jedem Schreiben frisch,
+  füllt leere Zeilen nach dem letzten Eintrag und hängt sonst neue an. Steht eine Kennung schon
+  im Doc, wird sie übersprungen.
+- **Korrigieren:** Nur Zeilen mit eigener `[app:…]`-Kennung und nur nach Bestätigung in der App.
+- **Wann:** beim Start, wenn das Netz zurückkommt, wenn die App wieder in den Vordergrund kommt
+  (höchstens alle 5 Minuten), sobald etwas wartet – und über „Jetzt abgleichen“.
 
 ## Entwicklung
 
@@ -40,12 +59,13 @@ src/
   domain/      reine Logik (getestet): Plan-Schema, JSON-Extraktion, Tabellen-Parser,
                Log-Format, Log-Parser, Pace/1RM/Volumen, Verlauf
   db/          Dexie-Datenbank, Einheiten/Pläne, Einstellungen, Backup
-  sync/        Sync-Warteschlange (+ Brücken-Client in Phase 2)
+  sync/        Sync-Warteschlange, Brücken-Client, Abgleich, automatischer Sync
   features/    Seiten: heute, tag, training, lauf, abschluss, woche, verlauf, einstellungen
   components/  BottomNav, Stepper, SyncBadge, PlanTagKarte …
   state/       Pausen-Timer
   data/        Doc-Auszug vom 22.11.2026 (Testdaten + Test-Fixture)
-tests/         Vitest
+tests/         Vitest (inkl. Sandbox-Tests der Apps-Script-Brücke)
+apps-script/   Code.gs (Brücke im Doc) + EINRICHTUNG.md
 ```
 
 ## Log-Format (muss zum Coach passen)

@@ -4,6 +4,7 @@
  */
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useRef, useState } from 'react';
+import { Link } from 'react-router';
 import { Stepper } from '../../components/Stepper';
 import { erstelleBackup, loescheAlles, pruefeBackup, spieleBackupEin } from '../../db/backup';
 import { db } from '../../db/db';
@@ -11,14 +12,17 @@ import { neuesterPlan, testplanLaden } from '../../db/einheiten';
 import { speichereEinstellungen, syncEingerichtet, useEinstellungen, type Einstellungen } from '../../db/einstellungen';
 import { formatDauer } from '../../domain/calc';
 import { heuteISO, isoZuDeutsch } from '../../domain/dates';
-import { useSyncZustand } from '../../hooks/daten';
+import { useOnline } from '../../hooks/daten';
+import { allesAbgleichen, useSyncDienst } from '../../sync/syncDienst';
+import { SyncEinstellungen } from './SyncEinstellungen';
 
 const SCHRITTE = [0.5, 1, 1.25, 2.5];
 const QUELLE_TEXT = { json: 'Plan-Daten (JSON)', tabelle: 'Plantabelle (Fallback)', testdaten: 'Testdaten' } as const;
 
 export function EinstellungenSeite() {
   const e = useEinstellungen();
-  const sync = useSyncZustand();
+  const dienst = useSyncDienst();
+  const online = useOnline();
   const plan = useLiveQuery(() => neuesterPlan(), []);
   const dateiEingabe = useRef<HTMLInputElement>(null);
   const [meldung, setMeldung] = useState<{ text: string; art: 'ok' | 'fehler' } | null>(null);
@@ -43,6 +47,18 @@ export function EinstellungenSeite() {
       if (!window.confirm(`Backup vom ${isoZuDeutsch(backup.exportiertAm.slice(0, 10))} mit ${anzahl} Einheiten einspielen? Alle aktuellen lokalen Daten werden ersetzt.`)) return;
       await spieleBackupEin(db, backup);
       setMeldung({ text: `Backup eingespielt (${anzahl} Einheiten).`, art: 'ok' });
+    } catch (err) {
+      setMeldung({ text: (err as Error).message, art: 'fehler' });
+    }
+  };
+
+  const planNeuLaden = async () => {
+    try {
+      const r = await allesAbgleichen();
+      setMeldung({
+        text: r.plan ? `Plan ${isoZuDeutsch(r.plan.woche_von)} – ${isoZuDeutsch(r.plan.woche_bis)} geladen. ${r.hinweise.join(' ')}` : r.hinweise.join(' '),
+        art: r.plan ? 'ok' : 'fehler',
+      });
     } catch (err) {
       setMeldung({ text: (err as Error).message, art: 'fehler' });
     }
@@ -116,56 +132,37 @@ export function EinstellungenSeite() {
         </div>
       </section>
 
-      <section className="karte" id="sync">
-        <h2>Google-Doc-Sync</h2>
-        {!syncEingerichtet(e) ? (
-          <div className="hinweis warn">
-            Noch nicht eingerichtet – alle Einträge werden lokal gespeichert ({sync.offen} warten). Die Verbindung zum Doc über die Apps-Script-Brücke
-            richten wir im nächsten Schritt ein.
-          </div>
-        ) : (
-          <div className={`hinweis ${sync.fehler ? 'fehler' : sync.offen ? 'warn' : 'ok'}`}>
-            {sync.offen === 0 ? 'Alles synchronisiert.' : `${sync.offen} Einträge warten.`} {sync.fehler ? `Letzter Fehler: ${sync.fehler}` : ''}
-          </div>
-        )}
-        <label className="feld">
-          <span>Web-App-URL der Brücke</span>
-          <input
-            className="eingabe"
-            inputMode="url"
-            placeholder="https://script.google.com/macros/s/…/exec"
-            value={e.bridgeUrl}
-            onChange={(x) => setze({ bridgeUrl: x.target.value.trim() })}
-          />
-        </label>
-        <label className="feld">
-          <span>Geheimer Schlüssel</span>
-          <input className="eingabe" type="password" autoComplete="off" value={e.bridgeSchluessel} onChange={(x) => setze({ bridgeSchluessel: x.target.value.trim() })} />
-        </label>
-        <p className="klein gedaempft">URL und Schlüssel bleiben nur auf diesem Gerät gespeichert.</p>
-      </section>
+      <SyncEinstellungen />
 
       <section className="karte">
         <h2>Plan</h2>
         {plan ? (
           <p className="klein">
-            Woche ab {isoZuDeutsch(plan.wocheVon)} · Quelle: {QUELLE_TEXT[plan.quelle]} · geladen am {isoZuDeutsch(plan.geladenAm.slice(0, 10))}
+            Woche ab {isoZuDeutsch(plan.wocheVon)} · Quelle: {QUELLE_TEXT[plan.quelle]} · geladen {new Date(plan.geladenAm).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}
           </p>
         ) : (
           <p className="klein gedaempft">Kein Plan gespeichert.</p>
         )}
-        <button className="knopf" disabled title="Kommt mit dem Doc-Sync">
-          Plan neu laden (ab Doc-Sync)
+        {plan?.quelle === 'tabelle' && plan.jsonStatus === 'fehlt' && (
+          <div className="hinweis warn">
+            Im Doc fehlen die Plan-Daten (JSON). Du kannst sie einmalig aus der Plantabelle erzeugen lassen.{' '}
+            <Link to="/plan-daten">Ansehen und ins Doc schreiben …</Link>
+          </div>
+        )}
+        <button className="knopf" disabled={!syncEingerichtet(e) || dienst.laeuft || !online} onClick={() => void planNeuLaden()}>
+          {dienst.laeuft ? 'Lade …' : 'Plan neu laden'}
         </button>
-        <button
-          className="knopf leise"
-          onClick={async () => {
-            await testplanLaden(db, true);
-            setMeldung({ text: 'Testplan 23.–29.11.2026 neu geladen.', art: 'ok' });
-          }}
-        >
-          Testplan neu laden
-        </button>
+        {!syncEingerichtet(e) && (
+          <button
+            className="knopf leise"
+            onClick={async () => {
+              await testplanLaden(db, true);
+              setMeldung({ text: 'Testplan 23.–29.11.2026 neu geladen.', art: 'ok' });
+            }}
+          >
+            Testplan neu laden
+          </button>
+        )}
       </section>
 
       <section className="karte">

@@ -68,6 +68,8 @@ export interface Einheit {
   syncFehler: string | null;
   /** Die Zeile, die zuletzt ins Doc geschrieben wurde. */
   logZeile: LogZeile | null;
+  /** Zeitpunkt des letzten erfolgreichen Syncs (für die Nachkontrolle). */
+  synchronisiertAm?: string;
 }
 
 /** Kennung, mit der App-Zeilen im Doc erkannt werden. */

@@ -59,6 +59,12 @@ export function HeuteSeite() {
       {planEintrag?.hinweise.map((h) => (
         <div key={h} className={`hinweis${planEintrag.quelle === 'testdaten' ? '' : ' warn'}`}>
           {h}
+          {planEintrag.quelle === 'tabelle' && planEintrag.jsonStatus === 'fehlt' && h.includes('Plan-Daten') && (
+            <>
+              {' '}
+              <Link to="/plan-daten">Plan-Daten jetzt erzeugen …</Link>
+            </>
+          )}
         </div>
       ))}
 

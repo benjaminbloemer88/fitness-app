@@ -14,19 +14,21 @@ import { useEinstellungen } from './db/einstellungen';
 import { AbschlussSeite } from './features/abschluss/AbschlussSeite';
 import { AuslassenSeite } from './features/abschluss/AuslassenSeite';
 import { EinstellungenSeite } from './features/einstellungen/EinstellungenSeite';
+import { PlanDatenSeite } from './features/einstellungen/PlanDatenSeite';
 import { HeuteSeite } from './features/heute/HeuteSeite';
 import { LaufSeite } from './features/lauf/LaufSeite';
 import { TagSeite } from './features/tag/TagSeite';
 import { TrainingSeite } from './features/training/TrainingSeite';
 import { WocheSeite } from './features/woche/WocheSeite';
 import { PausenTimerProvider } from './state/PausenTimer';
+import { useAutoSync } from './sync/syncDienst';
 
 // Der Verlauf (mit der großen Diagramm-Bibliothek) wird erst beim Öffnen geladen → schnellerer Start.
 // Offline klappt das trotzdem, weil der Service Worker alle Dateien vorab cacht.
 const VerlaufSeite = lazy(() => import('./features/verlauf/VerlaufSeite').then((m) => ({ default: m.VerlaufSeite })));
 
 /** Seiten, auf denen die Navigation unten ausgeblendet wird (Vollbild-Abläufe). */
-const OHNE_NAV = ['/training/', '/lauf/', '/abschluss/', '/auslassen/'];
+const OHNE_NAV = ['/training/', '/lauf/', '/abschluss/', '/auslassen/', '/plan-daten'];
 
 function Layout() {
   const { pathname } = useLocation();
@@ -59,6 +61,7 @@ function Layout() {
           }
         />
         <Route path="/einstellungen" element={<EinstellungenSeite />} />
+        <Route path="/plan-daten" element={<PlanDatenSeite />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       {!ohneNav && <BottomNav />}
@@ -78,6 +81,9 @@ export function App() {
   useEffect(() => {
     void testplanLaden();
   }, []);
+
+  // Doc-Sync automatisch (Start, online, Vordergrund, neue Einträge)
+  useAutoSync();
 
   return (
     <Fehlergrenze>

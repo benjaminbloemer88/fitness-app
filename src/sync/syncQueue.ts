@@ -114,7 +114,7 @@ export async function syncAusfuehren(db: FitnessDB, bridge: LogBridge): Promise<
 async function markiereSynchronisiert(db: FitnessDB, a: SyncAuftrag, e: Einheit) {
   await db.transaction('rw', db.syncQueue, db.einheiten, async () => {
     await db.syncQueue.delete(a.id!);
-    await db.einheiten.update(e.id, { sync: 'synchronisiert', syncFehler: null, logZeile: erzeugeLogZeile(e) });
+    await db.einheiten.update(e.id, { sync: 'synchronisiert', syncFehler: null, logZeile: erzeugeLogZeile(e), synchronisiertAm: jetzt() });
   });
 }
 
