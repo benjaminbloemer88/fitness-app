@@ -1,49 +1,52 @@
 /**
- * Startseite „Heute“: die Einheit des Tages. An Ruhetagen ein Hinweis und die nächste Einheit.
+ * Startseite „Heute“: die Einheit(en) des Tages – unter Berücksichtigung von Verschiebungen.
+ * An freien Tagen: Hinweis, nächste Einheit und „Heute trainieren?“ mit den offenen Einheiten.
  */
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link, useNavigate } from 'react-router';
 import { PlanTagKarte } from '../../components/PlanTagKarte';
 import { SyncBadge } from '../../components/SyncBadge';
 import { db } from '../../db/db';
-import { planTag, starteFreieEinheit } from '../../db/einheiten';
-import { formatTagKurz, formatTagLang } from '../../domain/dates';
-import type { PlanTag } from '../../domain/planSchema';
-import { useAllePlaene, useHeute, usePlanFuerDatum } from '../../hooks/daten';
+import { planTag, starteEinheit, starteFreieEinheit } from '../../db/einheiten';
+import { einheitVerschieben, usePlanung } from '../../db/verschiebungen';
+import { formatTagKurz, formatTagLang, montagDerWoche } from '../../domain/dates';
+import { einheitenAm, offeneEinheitenAb, wegVerschoben, type EffektiveEinheit } from '../../domain/wochenplan';
+import { useHeute } from '../../hooks/daten';
 import { audioVorbereiten } from '../../lib/feedback';
 import { EinheitKurz } from '../einheit/EinheitKurz';
 import { TagAktionen } from '../tag/TagAktionen';
 
-/** Nächster noch offener Trainingstag nach `heute` über alle gespeicherten Pläne. */
-function naechsteEinheit(plaene: { plan: { tage: PlanTag[] } }[], heute: string, erledigt: Set<string>): PlanTag | null {
-  const tage = plaene
-    .flatMap((p) => p.plan.tage)
-    .filter((t) => t.typ !== 'ruhe' && t.datum > heute && !erledigt.has(t.datum))
-    .sort((a, b) => a.datum.localeCompare(b.datum));
-  return tage[0] ?? null;
-}
-
 export function HeuteSeite() {
   const heute = useHeute();
   const navigate = useNavigate();
-  const planEintrag = usePlanFuerDatum(heute);
-  const plaene = useAllePlaene();
-  // Freie Einheiten von heute (ohne Plantag)
-  const freie = useLiveQuery(() => db.einheiten.where('datum').equals(heute).filter((e) => e.planDatum === null).toArray(), [heute], []);
-  // Plantage, die schon erledigt/ausgelassen sind (z. B. vorgezogen) – und was heute schon vorgezogen wurde
-  const fertigeEinheiten = useLiveQuery(() => db.einheiten.where('status').anyOf('abgeschlossen', 'ausgelassen').toArray(), [], []);
-  const erledigt = new Set(fertigeEinheiten.flatMap((e) => (e.planDatum ? [e.planDatum] : [])));
-  const heuteVorgezogen = fertigeEinheiten.filter((e) => e.datum === heute && e.planDatum !== null && e.planDatum !== heute);
+  const planung = usePlanung();
+  // Einheiten von heute, die zu keinem heutigen Plantag gehören (frei oder von anderem Tag nachgetragen)
+  const sonstige = useLiveQuery(() => db.einheiten.where('datum').equals(heute).toArray(), [heute], []);
 
-  if (planEintrag === undefined) return <main className="seite" />;
+  if (!planung) return <main className="seite" />;
 
-  const tag = planEintrag ? planTag(planEintrag.plan, heute) : undefined;
-  const naechste = naechsteEinheit(plaene, heute, erledigt);
+  const planEintrag = planung.plaene.find((p) => p.wocheVon === montagDerWoche(heute)) ?? null;
+  const planTagHeute = planEintrag ? planTag(planEintrag.plan, heute) : undefined;
+  const heuteGeplant = einheitenAm(planung.effektiv, heute);
+  const wegVonHeute = wegVerschoben(planung.effektiv, heute);
+  // Offene Einheiten ab Montag dieser Woche (auch verpasste), ohne die von heute
+  const offen = offeneEinheitenAb(planung.effektiv, montagDerWoche(heute), planung.fertig).filter((e) => e.datum !== heute);
+  const naechste = offen.find((e) => e.datum > heute) ?? null;
+  const heutePlanDaten = new Set(heuteGeplant.map((e) => e.tag.datum));
+  const weitere = sonstige.filter((e) => !e.planDatum || !heutePlanDaten.has(e.planDatum));
 
   const frei = async (typ: 'gym' | 'lauf') => {
     audioVorbereiten();
     const id = await starteFreieEinheit(typ, typ === 'lauf' ? 'Lauf – extra' : 'Gym – frei', heute);
     navigate(typ === 'lauf' ? `/lauf/${id}` : `/training/${id}`);
+  };
+
+  /** Offene Einheit auf heute holen und direkt starten. */
+  const heuteMachen = async (e: EffektiveEinheit) => {
+    audioVorbereiten();
+    await einheitVerschieben(e.tag.datum, heute);
+    const id = await starteEinheit(e.tag, heute);
+    navigate(e.tag.typ === 'lauf' ? `/lauf/${id}` : `/training/${id}`);
   };
 
   return (
@@ -68,59 +71,73 @@ export function HeuteSeite() {
         </div>
       ))}
 
-      {tag && tag.typ !== 'ruhe' && (
-        <>
-          <PlanTagKarte tag={tag} hervorheben />
-          <TagAktionen tag={tag} heute={heute} />
-        </>
-      )}
+      {/* Einheiten, die heute stattfinden (auch hierher verschobene) */}
+      {heuteGeplant.map((e) => (
+        <section key={e.tag.datum} className="stapel">
+          <PlanTagKarte tag={e.tag} hervorheben />
+          <TagAktionen eintrag={e} heute={heute} />
+        </section>
+      ))}
 
-      {tag?.typ === 'ruhe' && (
+      {heuteGeplant.length === 0 && (
         <section className="karte">
-          <h2 style={{ margin: 0 }}>Ruhetag 😌</h2>
-          <p className="gedaempft">{tag.hinweis ?? 'Erholung ist Teil des Trainings.'}</p>
+          <h2 style={{ margin: 0 }}>{planTagHeute ? 'Heute frei 😌' : 'Kein Plan für heute'}</h2>
+          {wegVonHeute.length > 0 && (
+            <p className="gedaempft">
+              {wegVonHeute.map((e) => `${e.tag.titel} ist auf ${formatTagKurz(e.datum)} verschoben.`).join(' ')}
+            </p>
+          )}
+          {planTagHeute?.typ === 'ruhe' && <p className="gedaempft">{planTagHeute.hinweis ?? 'Erholung ist Teil des Trainings.'}</p>}
+          {!planEintrag && (
+            <p className="gedaempft">
+              Für diese Woche ist noch kein Plan da. Sobald der Coach ihn ins Doc geschrieben hat, lädt die App ihn automatisch.
+            </p>
+          )}
         </section>
       )}
 
-      {!tag && (
-        <div className="hinweis warn">
-          {naechste
-            ? `Für diese Woche gibt es keinen Plan. Nächste offene Einheit: ${formatTagKurz(naechste.datum)}`
-            : 'Kein aktueller Plan vorhanden. Sobald der Coach den neuen Plan ins Doc geschrieben hat: Einstellungen → „Plan neu laden“.'}
-        </div>
-      )}
+      {weitere.length > 0 && <h2 style={{ marginTop: 8 }}>Heute erfasst</h2>}
+      {weitere.map((e) => (
+        <EinheitKurz key={e.id} einheit={e} />
+      ))}
 
-      {(!tag || tag.typ === 'ruhe') && naechste && (
+      {/* Nächste Einheit (an freien Tagen ausführlich) */}
+      {heuteGeplant.length === 0 && naechste && (
         <>
           <h2 style={{ marginTop: 8 }}>Nächste Einheit</h2>
-          <PlanTagKarte tag={naechste} zeigeDatum />
-          {/* Am Tag ohne Plan darf man die nächste Einheit direkt vorziehen */}
-          {!tag ? (
-            <TagAktionen tag={naechste} heute={heute} />
-          ) : (
-            <Link className="knopf block" to={`/tag/${naechste.datum}`}>
-              Ansehen
-            </Link>
-          )}
+          <PlanTagKarte tag={naechste.tag} zeigeDatum datum={naechste.datum} />
+          <Link className="knopf block" to={`/tag/${naechste.tag.datum}`}>
+            Ansehen · {formatTagKurz(naechste.datum)}
+          </Link>
         </>
       )}
 
-      {heuteVorgezogen.length > 0 && <h2 style={{ marginTop: 8 }}>Heute erledigt</h2>}
-      {heuteVorgezogen.map((e) => (
-        <EinheitKurz key={e.id} einheit={e} />
-      ))}
-
-      {freie.map((e) => (
-        <EinheitKurz key={e.id} einheit={e} />
-      ))}
+      {/* Heute lieber eine andere Einheit machen? */}
+      {offen.length > 0 && (
+        <section className="karte">
+          <h3>{heuteGeplant.length ? 'Lieber etwas anderes?' : 'Heute trainieren?'}</h3>
+          <p className="klein gedaempft">Holt die Einheit auf heute und startet sie. Der Plan im Doc bleibt, im Log steht „geplant für …“.</p>
+          {offen.slice(0, 4).map((e) => (
+            <div key={e.tag.datum} className="zeile zwischen">
+              <div>
+                <div className="fett">{e.tag.titel}</div>
+                <div className="klein gedaempft">{formatTagKurz(e.datum)}</div>
+              </div>
+              <button className="knopf" onClick={() => void heuteMachen(e)}>
+                Heute machen
+              </button>
+            </div>
+          ))}
+        </section>
+      )}
 
       <section className="stapel" style={{ marginTop: 8 }}>
         <div className="klein gedaempft">Zusätzlich trainiert?</div>
         <div className="zeile">
-          <button className="knopf block" onClick={() => frei('lauf')}>
+          <button className="knopf block" onClick={() => void frei('lauf')}>
             + Extra-Lauf
           </button>
-          <button className="knopf block" onClick={() => frei('gym')}>
+          <button className="knopf block" onClick={() => void frei('gym')}>
             + Freies Training
           </button>
         </div>

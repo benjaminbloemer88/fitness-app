@@ -126,7 +126,9 @@ describe('Komplette Log-Zeile', () => {
   });
 
   it('Lauf ohne Anmerkung → nur Kennung', () => {
-    const zeile = erzeugeLogZeile(einheit({ typ: 'lauf', titel: 'Lauf – locker', datum: '2026-11-28', lauf: { art: 'locker', distanzKm: 5, dauerSek: 1880 }, gefuehl: 5 }));
+    const zeile = erzeugeLogZeile(
+      einheit({ typ: 'lauf', titel: 'Lauf – locker', datum: '2026-11-28', planDatum: '2026-11-28', lauf: { art: 'locker', distanzKm: 5, dauerSek: 1880 }, gefuehl: 5 }),
+    );
     expect(zeile.wasGemacht).toBe('5 km, 31:20, 6:16/km (locker)');
     expect(zeile.anmerkungen).toBe('[app:ab12]');
     expect(zeile.datum).toBe('28.11.2026');
@@ -135,6 +137,12 @@ describe('Komplette Log-Zeile', () => {
   it('ausgelassen: „ausgelassen“, Gefühl „–“, Grund in den Anmerkungen', () => {
     const zeile = erzeugeLogZeile(einheit({ status: 'ausgelassen', grund: 'erkältet', gefuehl: null, anmerkungen: '' }));
     expect(zeile).toMatchObject({ wasGemacht: 'ausgelassen', gefuehl: '–', anmerkungen: 'erkältet [app:ab12]' });
+  });
+
+  it('verschoben/vorgezogen: Hinweis „geplant für …“ für den Coach', () => {
+    const zeile = erzeugeLogZeile(einheit({ datum: '2026-11-22', planDatum: '2026-11-23', anmerkungen: 'gut geschlafen', uebungen: [] }));
+    expect(zeile.datum).toBe('22.11.2026');
+    expect(zeile.anmerkungen).toBe('gut geschlafen; geplant für Mo 23.11. [app:ab12]');
   });
 
   it('Zeilenumbrüche in Anmerkungen werden entfernt', () => {

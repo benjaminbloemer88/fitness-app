@@ -663,6 +663,73 @@ input[type='range'].regler {
   gap: 12px;
 }
 
+/* ───────── Übungs-Infos ───────── */
+
+.uebung-zeile {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+  min-height: 44px;
+}
+.info-punkt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-2);
+  color: var(--text-2);
+  font-size: 0.75rem;
+  font-weight: 800;
+  font-style: normal;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.uebungsfotos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.uebungsfoto {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+.uebungsfoto img,
+.foto-platzhalter {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #fff;
+}
+.foto-platzhalter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 8px;
+  background: var(--flaeche-2);
+}
+.ausfuehrung {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 /* ───────── Diagramme ───────── */
 
 .diagramm {

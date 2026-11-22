@@ -42,6 +42,20 @@ export default defineConfig({
         // Alles, was die App zum Start braucht, wird vorab gecacht → läuft offline im Gym.
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}'],
         navigateFallback: 'index.html',
+        // Übungsfotos (free-exercise-db auf GitHub): einmal laden, dann aus dem Cache – auch offline.
+        // Derselbe Cache wird von src/lib/bilderVorladen.ts vorab befüllt.
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.origin === 'https://raw.githubusercontent.com' && url.pathname.startsWith('/yuhonas/free-exercise-db/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'uebungsbilder',
+              matchOptions: { ignoreVary: true },
+              cacheableResponse: { statuses: [0, 200] },
+              expiration: { maxEntries: 300, maxAgeSeconds: 365 * 24 * 60 * 60 },
+            },
+          },
+        ],
       },
     }),
   ],

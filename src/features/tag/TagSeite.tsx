@@ -1,9 +1,10 @@
-/** Detail eines Plantags (aus der Wochenansicht geöffnet). */
+/** Detail einer Einheit des Plans (aus der Wochenansicht geöffnet). Der Pfad enthält das Plandatum. */
 import { useNavigate, useParams } from 'react-router';
 import { IconZurueck } from '../../components/Icons';
 import { PlanTagKarte } from '../../components/PlanTagKarte';
 import { planTag } from '../../db/einheiten';
-import { formatTagLang } from '../../domain/dates';
+import { usePlanung } from '../../db/verschiebungen';
+import { formatTagKurz, formatTagLang } from '../../domain/dates';
 import { useHeute, usePlanFuerDatum } from '../../hooks/daten';
 import { TagAktionen } from './TagAktionen';
 
@@ -12,8 +13,10 @@ export function TagSeite() {
   const navigate = useNavigate();
   const heute = useHeute();
   const planEintrag = usePlanFuerDatum(datum);
-  if (planEintrag === undefined) return <main className="seite" />;
+  const planung = usePlanung();
+  if (planEintrag === undefined || !planung) return <main className="seite" />;
   const tag = planEintrag ? planTag(planEintrag.plan, datum) : undefined;
+  const eintrag = planung.effektiv.find((e) => e.tag.datum === datum);
 
   return (
     <main className="seite">
@@ -22,7 +25,8 @@ export function TagSeite() {
           <IconZurueck />
         </button>
         <div>
-          <h1>{formatTagLang(datum)}</h1>
+          <h1>{formatTagLang(eintrag?.datum ?? datum)}</h1>
+          {eintrag?.verschobenVon && <div className="klein gedaempft">geplant für {formatTagKurz(eintrag.verschobenVon)}</div>}
         </div>
       </header>
       {!tag ? (
@@ -30,7 +34,7 @@ export function TagSeite() {
       ) : (
         <>
           <PlanTagKarte tag={tag} />
-          {tag.typ === 'ruhe' ? <div className="hinweis">Ruhetag.</div> : <TagAktionen tag={tag} heute={heute} />}
+          {tag.typ === 'ruhe' || !eintrag ? <div className="hinweis">Ruhetag.</div> : <TagAktionen eintrag={eintrag} heute={heute} />}
         </>
       )}
     </main>

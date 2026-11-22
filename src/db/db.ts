@@ -44,6 +44,13 @@ export interface ImportZeile {
   importiertAm: string;
 }
 
+/** Lokale Verschiebung eines Trainingstags (der Plan im Doc bleibt unverändert). */
+export interface VerschiebungEintrag {
+  planDatum: string;
+  zielDatum: string;
+  erstelltAm: string;
+}
+
 // ── Vorbereitet für später (noch ohne Oberfläche) ──
 export interface KoerpergewichtEintrag {
   datum: string;
@@ -64,6 +71,7 @@ export class FitnessDB extends Dexie {
   logImport!: EntityTable<ImportZeile, 'id'>;
   koerpergewicht!: EntityTable<KoerpergewichtEintrag, 'datum'>;
   protein!: EntityTable<ProteinEintrag, 'id'>;
+  verschiebungen!: EntityTable<VerschiebungEintrag, 'planDatum'>;
 
   constructor(name = 'fitness') {
     super(name);
@@ -76,6 +84,10 @@ export class FitnessDB extends Dexie {
       logImport: '++id, datum, appId',
       koerpergewicht: 'datum',
       protein: '++id, datum',
+    });
+    // Version 2: Trainingstage verschieben. Dexie übernimmt alle bestehenden Daten automatisch.
+    this.version(2).stores({
+      verschiebungen: 'planDatum, zielDatum',
     });
   }
 }

@@ -7,6 +7,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { Stepper } from '../../components/Stepper';
+import { UebungsInfoDialog } from '../../components/UebungsInfoDialog';
 import { IconHaken, IconMehr } from '../../components/Icons';
 import { formatDezimal } from '../../domain/calc';
 import { isoZuKurz } from '../../domain/dates';
@@ -38,6 +39,7 @@ export function UebungKarte({ uebung, offen, letzte, gewichtSchritt, onKopfTipp,
   const [gewaehlt, setGewaehlt] = useState<number | null>(null);
   const [menue, setMenue] = useState(false);
   const [neuerName, setNeuerName] = useState<string | null>(null);
+  const [info, setInfo] = useState(false);
   const karte = useRef<HTMLElement>(null);
 
   // Wird die Übung aufgeklappt (z. B. automatisch nach der letzten Satz der vorigen),
@@ -129,10 +131,18 @@ export function UebungKarte({ uebung, offen, letzte, gewichtSchritt, onKopfTipp,
                 )}
               </div>
             </div>
-            <button className="knopf icon leise" onClick={() => setMenue((m) => !m)} aria-label="Weitere Aktionen">
-              <IconMehr />
-            </button>
+            <div className="zeile" style={{ gap: 4 }}>
+              <button className="knopf icon leise" onClick={() => setInfo(true)} aria-label={`${uebung.name}: Infos anzeigen`}>
+                <i className="info-punkt" style={{ width: 26, height: 26, fontSize: '0.95rem', margin: 0 }} aria-hidden="true">
+                  i
+                </i>
+              </button>
+              <button className="knopf icon leise" onClick={() => setMenue((m) => !m)} aria-label="Weitere Aktionen">
+                <IconMehr />
+              </button>
+            </div>
           </div>
+          {info && <UebungsInfoDialog name={uebung.name} onSchliessen={() => setInfo(false)} />}
 
           {menue && (
             <div className="karte">

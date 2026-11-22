@@ -22,6 +22,7 @@ import { TrainingSeite } from './features/training/TrainingSeite';
 import { WocheSeite } from './features/woche/WocheSeite';
 import { PausenTimerProvider } from './state/PausenTimer';
 import { useAutoSync } from './sync/syncDienst';
+import { useBilderVorladen } from './lib/bilderVorladen';
 
 // Der Verlauf (mit der großen Diagramm-Bibliothek) wird erst beim Öffnen geladen → schnellerer Start.
 // Offline klappt das trotzdem, weil der Service Worker alle Dateien vorab cacht.
@@ -84,6 +85,9 @@ export function App() {
 
   // Doc-Sync automatisch (Start, online, Vordergrund, neue Einträge)
   useAutoSync();
+
+  // Übungsfotos für offline vorladen
+  useBilderVorladen();
 
   return (
     <Fehlergrenze>

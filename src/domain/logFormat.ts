@@ -14,7 +14,7 @@
  * - Unterschiedliche Gewichte pro Satz: „3×10×60/65/70 kg“.
  */
 import { formatDauer, formatDezimal, formatPace, paceSekProKm } from './calc';
-import { isoZuDeutsch } from './dates';
+import { formatTagKurz, isoZuDeutsch } from './dates';
 import { appKennung, zerlegeWdh, type Einheit, type LaufErgebnis, type LogZeile, type UebungErgebnis } from './einheit';
 
 /** Eine Übung als Log-Text, oder null, wenn kein Satz geschafft wurde. */
@@ -93,12 +93,14 @@ export function erzeugeLogZeile(e: Einheit): LogZeile {
   }
 
   const wasGemacht = e.typ === 'lauf' && e.lauf ? formatLauf(e.lauf) : formatGym(e.uebungen);
+  // Verschoben/vorgezogen: dem Coach sagen, für welchen Tag die Einheit geplant war.
+  const verschoben = e.planDatum && e.planDatum !== e.datum ? `geplant für ${formatTagKurz(e.planDatum)}` : '';
   return {
     datum: isoZuDeutsch(e.datum),
     einheit: e.titel,
     wasGemacht,
     gefuehl: e.gefuehl !== null ? String(e.gefuehl) : '',
-    anmerkungen: mitKennung(e.anmerkungen, e.typ === 'gym' ? autoAnmerkungen(e.uebungen) : ''),
+    anmerkungen: mitKennung(e.anmerkungen, e.typ === 'gym' ? autoAnmerkungen(e.uebungen) : '', verschoben),
   };
 }
 

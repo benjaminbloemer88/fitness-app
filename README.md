@@ -19,6 +19,8 @@ wöchentliche „Trainingscoach“ pflegt.
 | Plan aus dem Doc lesen (JSON + Fallback-Tabelle), einmalige Plan-Daten-Erzeugung | ✅ |
 | Sync-Warteschlange (automatisch, keine Doppelten über `[app:xxxx]`), Korrekturen | ✅ |
 | Import der Log-Zeilen für den Verlauf, Nachkontrolle eigener Zeilen | ✅ |
+| Trainingstage verschieben / tauschen / „Heute machen“ (nur lokal, Plan im Doc bleibt) | ✅ |
+| Übungs-Infos: Fotos, Muskeln, Ausführung, Tipp (43 Übungen, offline vorgeladen) | ✅ |
 
 Ohne eingerichtete Brücke nutzt die App den Plan 23.–29.11.2026 als Testdaten; alles, was du
 erfasst, wartet lokal und wird nach der Einrichtung automatisch ins Doc übertragen.
@@ -78,6 +80,7 @@ apps-script/   Code.gs (Brücke im Doc) + EINRICHTUNG.md
 | Gewicht pro Satz verschieden | `Rumänisches Kreuzheben 3×10×60/65/70 kg` | | |
 | Lauf | `5 km, 31:20, 6:16/km (locker)` | `5` | `[app:x7k2]` |
 | Ausgelassen | `ausgelassen` | `–` | `krank [app:q3m9]` |
+| Verschoben/vorgezogen | (wie oben, Datum = Trainingstag) | | `gut geschlafen; geplant für Mo 23.11. [app:ab12]` |
 
 Die Klammer `(8/8/7)` steht nur, wenn die Wiederholungen der Sätze voneinander abweichen.
 Nicht gemachte oder getauschte Übungen schreibt die App automatisch in die Anmerkungen

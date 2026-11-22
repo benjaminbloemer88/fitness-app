@@ -16,6 +16,7 @@ const BackupSchema = z.object({
     logImport: z.array(z.any()).default([]),
     koerpergewicht: z.array(z.any()).default([]),
     protein: z.array(z.any()).default([]),
+    verschiebungen: z.array(z.any()).default([]),
   }),
 });
 
@@ -34,8 +35,14 @@ export async function erstelleBackup(db: FitnessDB): Promise<Backup> {
       logImport: await db.logImport.toArray(),
       koerpergewicht: await db.koerpergewicht.toArray(),
       protein: await db.protein.toArray(),
+      verschiebungen: await db.verschiebungen.toArray(),
     },
   };
+}
+
+/** Alle Tabellen, die ein Backup umfasst. */
+function alleTabellen(db: FitnessDB) {
+  return [db.plaene, db.einheiten, db.syncQueue, db.einstellungen, db.logImport, db.koerpergewicht, db.protein, db.verschiebungen];
 }
 
 /** Prüft eine Backup-Datei. Wirft einen verständlichen Fehler, wenn sie nicht passt. */
@@ -48,16 +55,8 @@ export function pruefeBackup(roh: unknown): Backup {
 /** Ersetzt ALLE lokalen Daten durch das Backup. */
 export async function spieleBackupEin(db: FitnessDB, backup: Backup): Promise<void> {
   const d = backup.daten;
-  await db.transaction('rw', [db.plaene, db.einheiten, db.syncQueue, db.einstellungen, db.logImport, db.koerpergewicht, db.protein], async () => {
-    await Promise.all([
-      db.plaene.clear(),
-      db.einheiten.clear(),
-      db.syncQueue.clear(),
-      db.einstellungen.clear(),
-      db.logImport.clear(),
-      db.koerpergewicht.clear(),
-      db.protein.clear(),
-    ]);
+  await db.transaction('rw', alleTabellen(db), async () => {
+    await Promise.all(alleTabellen(db).map((t) => t.clear()));
     await db.plaene.bulkPut(d.plaene);
     await db.einheiten.bulkPut(d.einheiten);
     await db.syncQueue.bulkPut(d.syncQueue);
@@ -65,13 +64,13 @@ export async function spieleBackupEin(db: FitnessDB, backup: Backup): Promise<vo
     await db.logImport.bulkPut(d.logImport);
     await db.koerpergewicht.bulkPut(d.koerpergewicht);
     await db.protein.bulkPut(d.protein);
+    await db.verschiebungen.bulkPut(d.verschiebungen);
   });
 }
 
 /** Löscht alle lokalen Daten (außer den Einstellungen, wenn gewünscht). */
 export async function loescheAlles(db: FitnessDB, einstellungenBehalten = true): Promise<void> {
-  await db.transaction('rw', [db.plaene, db.einheiten, db.syncQueue, db.einstellungen, db.logImport, db.koerpergewicht, db.protein], async () => {
-    await Promise.all([db.plaene.clear(), db.einheiten.clear(), db.syncQueue.clear(), db.logImport.clear(), db.koerpergewicht.clear(), db.protein.clear()]);
-    if (!einstellungenBehalten) await db.einstellungen.clear();
+  await db.transaction('rw', alleTabellen(db), async () => {
+    await Promise.all(alleTabellen(db).filter((t) => !einstellungenBehalten || t !== db.einstellungen).map((t) => t.clear()));
   });
 }
