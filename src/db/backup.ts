@@ -17,6 +17,7 @@ const BackupSchema = z.object({
     koerpergewicht: z.array(z.any()).default([]),
     protein: z.array(z.any()).default([]),
     verschiebungen: z.array(z.any()).default([]),
+    ersetzungen: z.array(z.any()).default([]),
   }),
 });
 
@@ -36,13 +37,14 @@ export async function erstelleBackup(db: FitnessDB): Promise<Backup> {
       koerpergewicht: await db.koerpergewicht.toArray(),
       protein: await db.protein.toArray(),
       verschiebungen: await db.verschiebungen.toArray(),
+      ersetzungen: await db.ersetzungen.toArray(),
     },
   };
 }
 
 /** Alle Tabellen, die ein Backup umfasst. */
 function alleTabellen(db: FitnessDB) {
-  return [db.plaene, db.einheiten, db.syncQueue, db.einstellungen, db.logImport, db.koerpergewicht, db.protein, db.verschiebungen];
+  return [db.plaene, db.einheiten, db.syncQueue, db.einstellungen, db.logImport, db.koerpergewicht, db.protein, db.verschiebungen, db.ersetzungen];
 }
 
 /** Prüft eine Backup-Datei. Wirft einen verständlichen Fehler, wenn sie nicht passt. */
@@ -65,6 +67,7 @@ export async function spieleBackupEin(db: FitnessDB, backup: Backup): Promise<vo
     await db.koerpergewicht.bulkPut(d.koerpergewicht);
     await db.protein.bulkPut(d.protein);
     await db.verschiebungen.bulkPut(d.verschiebungen);
+    await db.ersetzungen.bulkPut(d.ersetzungen);
   });
 }
 

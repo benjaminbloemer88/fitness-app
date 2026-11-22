@@ -11,7 +11,9 @@ import {
   type SatzErgebnis,
   type UebungErgebnis,
 } from '../domain/einheit';
+import { ersetzungFuer } from '../domain/ersetzungen';
 import { formatUebung } from '../domain/logFormat';
+import { istKoerpergewichtsUebung } from '../domain/uebungsKatalog';
 import { planAusSnapshot } from '../domain/planLaden';
 import type { Plan, PlanTag, Uebung } from '../domain/planSchema';
 import { einreihen } from '../sync/syncQueue';
@@ -91,11 +93,12 @@ export async function letzteLeistung(
 // ───────────────────────── Einheiten anlegen ─────────────────────────
 
 /** Sätze für eine Planübung vorbelegen: Zielgewicht, sonst (außer bei „kalibrieren“) das letzte Gewicht. */
-export function saetzeVorbelegen(u: Uebung, letzte: LetzteLeistung | null): SatzErgebnis[] {
+export function saetzeVorbelegen(u: Uebung, letzte: LetzteLeistung | null, ersetzt = false): SatzErgebnis[] {
   const { zahl } = zerlegeWdh(u.wdh);
   const kalibrieren = /kalibrieren/i.test(u.hinweis ?? '');
   const letztesGewicht = letzte?.saetze.at(-1)?.kg ?? null;
-  const kg = u.gewicht_kg ?? (kalibrieren ? null : letztesGewicht);
+  // Bei einer getauschten Übung passt das Zielgewicht des Plans nicht – dann das letzte eigene Gewicht.
+  const kg = ersetzt ? letztesGewicht : (u.gewicht_kg ?? (kalibrieren ? null : letztesGewicht));
   return Array.from({ length: u.saetze }, () => ({ kg, wdh: zahl, erledigt: false }));
 }
 
@@ -115,15 +118,19 @@ export async function starteEinheit(tag: PlanTag, datum: string, db: FitnessDB =
   const laufend = await db.einheiten.where('planDatum').equals(tag.datum).filter((e) => e.status === 'laeuft').first();
   if (laufend) return laufend.id;
 
+  // Getauschte Übungen (Tages-Tausch oder Regel „immer“) gleich berücksichtigen
+  const ersetzungen = await db.ersetzungen.toArray();
   const uebungen: UebungErgebnis[] = [];
   for (const u of tag.uebungen) {
-    const letzte = await letzteLeistung(u.name, null, db);
+    const ersetzung = ersetzungFuer(ersetzungen, tag.datum, u.name);
+    const name = ersetzung?.ersatz ?? u.name;
+    const letzte = await letzteLeistung(name, null, db);
     uebungen.push({
-      name: u.name,
+      name,
       planName: u.name,
       ziel: { saetze: u.saetze, wdh: u.wdh, gewichtKg: u.gewicht_kg, hinweis: u.hinweis },
-      koerpergewicht: istKoerpergewicht(u),
-      saetze: saetzeVorbelegen(u, letzte),
+      koerpergewicht: ersetzung ? istKoerpergewichtsUebung(name) : istKoerpergewicht(u),
+      saetze: saetzeVorbelegen(u, letzte, ersetzung !== null),
     });
   }
 

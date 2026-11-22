@@ -6,6 +6,7 @@
  */
 import Dexie, { type EntityTable } from 'dexie';
 import type { Einheit } from '../domain/einheit';
+import type { Ersetzung } from '../domain/ersetzungen';
 import type { PlanQuelle } from '../domain/planLaden';
 import type { Plan } from '../domain/planSchema';
 
@@ -51,6 +52,11 @@ export interface VerschiebungEintrag {
   erstelltAm: string;
 }
 
+/** Getauschte Übung (Tag oder Regel „immer“) – siehe domain/ersetzungen.ts. */
+export interface ErsetzungEintrag extends Ersetzung {
+  erstelltAm: string;
+}
+
 // ── Vorbereitet für später (noch ohne Oberfläche) ──
 export interface KoerpergewichtEintrag {
   datum: string;
@@ -72,6 +78,7 @@ export class FitnessDB extends Dexie {
   koerpergewicht!: EntityTable<KoerpergewichtEintrag, 'datum'>;
   protein!: EntityTable<ProteinEintrag, 'id'>;
   verschiebungen!: EntityTable<VerschiebungEintrag, 'planDatum'>;
+  ersetzungen!: EntityTable<ErsetzungEintrag, 'id'>;
 
   constructor(name = 'fitness') {
     super(name);
@@ -88,6 +95,10 @@ export class FitnessDB extends Dexie {
     // Version 2: Trainingstage verschieben. Dexie übernimmt alle bestehenden Daten automatisch.
     this.version(2).stores({
       verschiebungen: 'planDatum, zielDatum',
+    });
+    // Version 3: Übungen tauschen (pro Tag oder „immer“)
+    this.version(3).stores({
+      ersetzungen: 'id, planDatum',
     });
   }
 }

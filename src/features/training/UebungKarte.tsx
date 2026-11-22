@@ -24,6 +24,11 @@ interface Props {
   /** Satz wurde abgehakt; `uebungFertig` = alle Sätze dieser Übung erledigt. */
   onSatzAbgehakt: (uebungFertig: boolean) => void;
   onEntfernen: () => void;
+  /** Übung gegen eine Alternative tauschen (optional als Regel „immer“). */
+  onTauschen: (name: string, immer: boolean) => void | Promise<void>;
+  /** Gibt es für die Planübung eine Regel „immer ersetzen“? */
+  regelAktiv: boolean;
+  onRegelLoeschen: () => void | Promise<void>;
 }
 
 /** „57,5 kg × 8“ bzw. „× 8“ bei Körpergewicht */
@@ -34,11 +39,22 @@ function satzText(s: SatzErgebnis, kg: boolean, einheitWdh: string): string {
   return `${s.kg !== null ? `${formatDezimal(s.kg)} kg` : '– kg'} × ${wdh}${einheitWdh}`;
 }
 
-export function UebungKarte({ uebung, offen, letzte, gewichtSchritt, onKopfTipp, onAendern, onSatzAbgehakt, onEntfernen }: Props) {
+export function UebungKarte({
+  uebung,
+  offen,
+  letzte,
+  gewichtSchritt,
+  onKopfTipp,
+  onAendern,
+  onSatzAbgehakt,
+  onEntfernen,
+  onTauschen,
+  regelAktiv,
+  onRegelLoeschen,
+}: Props) {
   const ersterOffener = uebung.saetze.findIndex((s) => !s.erledigt);
   const [gewaehlt, setGewaehlt] = useState<number | null>(null);
   const [menue, setMenue] = useState(false);
-  const [neuerName, setNeuerName] = useState<string | null>(null);
   const [info, setInfo] = useState(false);
   const karte = useRef<HTMLElement>(null);
 
@@ -58,7 +74,9 @@ export function UebungKarte({ uebung, offen, letzte, gewichtSchritt, onKopfTipp,
   const { zusatz } = zerlegeWdh(uebung.ziel?.wdh ?? '');
   const sekunden = zusatz === 's';
   const einheitWdh = sekunden ? ' s' : '';
-  const kalibrieren = /kalibrieren/i.test(uebung.ziel?.hinweis ?? '');
+  const getauscht = uebung.planName !== null && uebung.planName !== uebung.name;
+  // „kalibrieren“ laut Plan – oder getauscht und noch kein eigenes Gewicht bekannt
+  const kalibrieren = /kalibrieren/i.test(uebung.ziel?.hinweis ?? '') || (getauscht && !letzte);
 
   /** Wert eines Satzes ändern; spätere, noch offene Sätze mit demselben alten Wert ziehen mit. */
   const setzeWert = (index: number, feld: 'kg' | 'wdh', wert: number | null) => {
@@ -95,8 +113,9 @@ export function UebungKarte({ uebung, offen, letzte, gewichtSchritt, onKopfTipp,
     setMenue(false);
   };
 
+  // Bei getauschten Übungen gilt das Zielgewicht des Plans nicht.
   const zielZeile = uebung.ziel
-    ? `${uebung.ziel.saetze} × ${uebung.ziel.wdh}${uebung.ziel.gewichtKg !== null ? ` × ${formatDezimal(uebung.ziel.gewichtKg)} kg` : ''}`
+    ? `${uebung.ziel.saetze} × ${uebung.ziel.wdh}${uebung.ziel.gewichtKg !== null && !getauscht ? ` × ${formatDezimal(uebung.ziel.gewichtKg)} kg` : ''}`
     : 'ergänzt';
 
   return (
@@ -142,54 +161,47 @@ export function UebungKarte({ uebung, offen, letzte, gewichtSchritt, onKopfTipp,
               </button>
             </div>
           </div>
-          {info && <UebungsInfoDialog name={uebung.name} onSchliessen={() => setInfo(false)} />}
+          {info && (
+            <UebungsInfoDialog
+              name={uebung.name}
+              onSchliessen={() => setInfo(false)}
+              tausch={{
+                original: uebung.planName ?? uebung.name,
+                aktuell: uebung.name,
+                regelAktiv,
+                onWaehlen: onTauschen,
+                onRegelLoeschen,
+              }}
+            />
+          )}
 
           {menue && (
             <div className="karte">
-              {neuerName === null ? (
-                <div className="stapel">
-                  <button className="knopf block" onClick={() => setNeuerName(uebung.name)}>
-                    Übung tauschen / umbenennen
-                  </button>
-                  <button className="knopf block" onClick={() => onAendern({ ...uebung, koerpergewicht: !uebung.koerpergewicht })}>
-                    {uebung.koerpergewicht ? 'Mit Gewicht' : 'Körpergewicht (ohne kg)'}
-                  </button>
-                  <button className="knopf block" onClick={satzEntfernen}>
-                    Letzten offenen Satz entfernen
-                  </button>
-                  <button
-                    className="knopf block gefahr"
-                    onClick={() => {
-                      if (window.confirm(`„${uebung.name}“ aus diesem Training entfernen?`)) onEntfernen();
-                    }}
-                  >
-                    Übung entfernen
-                  </button>
-                </div>
-              ) : (
-                <div className="stapel">
-                  <label className="feld">
-                    <span>Neuer Name</span>
-                    <input className="eingabe" value={neuerName} onChange={(e) => setNeuerName(e.target.value)} autoFocus />
-                  </label>
-                  <div className="zeile">
-                    <button className="knopf block" onClick={() => setNeuerName(null)}>
-                      Abbrechen
-                    </button>
-                    <button
-                      className="knopf primaer block"
-                      disabled={!neuerName.trim()}
-                      onClick={() => {
-                        onAendern({ ...uebung, name: neuerName.trim() });
-                        setNeuerName(null);
-                        setMenue(false);
-                      }}
-                    >
-                      Übernehmen
-                    </button>
-                  </div>
-                </div>
-              )}
+              <div className="stapel">
+                <button
+                  className="knopf block"
+                  onClick={() => {
+                    setInfo(true);
+                    setMenue(false);
+                  }}
+                >
+                  Übung tauschen …
+                </button>
+                <button className="knopf block" onClick={() => onAendern({ ...uebung, koerpergewicht: !uebung.koerpergewicht })}>
+                  {uebung.koerpergewicht ? 'Mit Gewicht' : 'Körpergewicht (ohne kg)'}
+                </button>
+                <button className="knopf block" onClick={satzEntfernen}>
+                  Letzten offenen Satz entfernen
+                </button>
+                <button
+                  className="knopf block gefahr"
+                  onClick={() => {
+                    if (window.confirm(`„${uebung.name}“ aus diesem Training entfernen?`)) onEntfernen();
+                  }}
+                >
+                  Übung entfernen
+                </button>
+              </div>
             </div>
           )}
 

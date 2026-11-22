@@ -443,6 +443,84 @@ export const UEBUNGEN: UebungsInfo[] = [
   },
 ];
 
+/**
+ * Bewegungsgruppen je Übung – daraus ergeben sich die Alternativen.
+ * Die erste Gruppe ist die wichtigste; je mehr Gruppen zwei Übungen teilen, desto besser passt der Ersatz.
+ */
+export const GRUPPEN: Record<string, string[]> = {
+  Kniebeuge: ['kniebeuge-beidbeinig', 'kniebeuge'],
+  Frontkniebeuge: ['kniebeuge-beidbeinig', 'kniebeuge'],
+  'Goblet Squat': ['kniebeuge-beidbeinig', 'kniebeuge'],
+  Beinpresse: ['kniebeuge-beidbeinig', 'kniebeuge', 'oberschenkel-vorn'],
+  'Bulgarian Split Squat': ['einbeinig', 'kniebeuge'],
+  Ausfallschritte: ['einbeinig', 'kniebeuge'],
+  'Step-ups': ['einbeinig', 'kniebeuge'],
+  Beinstrecker: ['oberschenkel-vorn'],
+  Beinbeuger: ['beinbeuger'],
+  'Beinbeuger sitzend': ['beinbeuger'],
+  'Rumänisches Kreuzheben': ['hueftstreckung', 'beinbeuger'],
+  Kreuzheben: ['hueftstreckung'],
+  Hyperextensions: ['hueftstreckung'],
+  'Hip Thrust': ['gesaess', 'hueftstreckung'],
+  'Glute Bridge': ['gesaess', 'hueftstreckung'],
+  Wadenheben: ['waden'],
+  Bankdrücken: ['brust-flach', 'brust-druck'],
+  'Bankdrücken KH': ['brust-flach', 'brust-druck'],
+  'Schrägbankdrücken KH': ['brust-schraeg', 'brust-druck'],
+  'Schrägbankdrücken LH': ['brust-schraeg', 'brust-druck'],
+  Liegestütze: ['brust-flach', 'brust-druck'],
+  Butterfly: ['brust-iso', 'brust-druck'],
+  Dips: ['brust-druck', 'trizeps'],
+  Langhantelrudern: ['rudern'],
+  Kurzhantelrudern: ['rudern'],
+  Kabelrudern: ['rudern'],
+  Latzug: ['vertikal-zug'],
+  Klimmzüge: ['vertikal-zug'],
+  'Face Pulls': ['hintere-schulter', 'schulter'],
+  'Reverse Flys': ['hintere-schulter', 'schulter'],
+  Shrugs: ['nacken'],
+  Schulterdrücken: ['schulter-druck', 'schulter'],
+  'Schulterdrücken KH': ['schulter-druck', 'schulter'],
+  Seitheben: ['schulter-seite', 'schulter'],
+  'Bizeps-Curls': ['bizeps'],
+  'Hammer-Curls': ['bizeps'],
+  'Trizeps-Pushdowns': ['trizeps'],
+  'French Press': ['trizeps'],
+  'Kabel-Crunch': ['bauch-beugen', 'bauch'],
+  Crunches: ['bauch-beugen', 'bauch'],
+  'Hängendes Beinheben': ['bauch-beugen', 'bauch'],
+  Plank: ['bauch-halten', 'bauch'],
+  'Russian Twist': ['bauch-drehen', 'bauch'],
+};
+
+/** Übungen, die üblicherweise mit Körpergewicht gemacht werden (Gewichtsfeld ausgeblendet). */
+const KOERPERGEWICHT = new Set(['Klimmzüge', 'Liegestütze', 'Dips', 'Plank', 'Crunches', 'Hängendes Beinheben', 'Hyperextensions']);
+
+export function istKoerpergewichtsUebung(name: string): boolean {
+  const info = findeUebungsInfo(name);
+  return info ? KOERPERGEWICHT.has(info.name) : false;
+}
+
+/**
+ * Passende Alternativen zu einer Übung – beste zuerst (meiste gemeinsame Gruppen).
+ * Für unbekannte Übungen gibt es keine Vorschläge.
+ */
+export function alternativen(name: string): UebungsInfo[] {
+  const info = findeUebungsInfo(name);
+  if (!info) return [];
+  const eigene = GRUPPEN[info.name] ?? [];
+  return UEBUNGEN.filter((u) => u.name !== info.name)
+    .map((u) => {
+      const gruppen = GRUPPEN[u.name] ?? [];
+      // Übereinstimmung in der Hauptgruppe zählt doppelt
+      const punkte = gruppen.filter((g) => eigene.includes(g)).length + (gruppen[0] === eigene[0] ? 1 : 0);
+      return { u, punkte };
+    })
+    .filter((x) => x.punkte > 0)
+    .sort((a, b) => b.punkte - a.punkte)
+    .map((x) => x.u);
+}
+
 /** Normalisiert einen Übungsnamen für den Vergleich. */
 function normiere(name: string): string {
   return name

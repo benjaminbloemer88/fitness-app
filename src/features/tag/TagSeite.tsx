@@ -33,7 +33,7 @@ export function TagSeite() {
         <div className="hinweis warn">Für diesen Tag gibt es keinen Plan.</div>
       ) : (
         <>
-          <PlanTagKarte tag={tag} />
+          <PlanTagKarte tag={tag} tauschbar={tag.typ === 'gym'} />
           {tag.typ === 'ruhe' || !eintrag ? <div className="hinweis">Ruhetag.</div> : <TagAktionen eintrag={eintrag} heute={heute} />}
         </>
       )}

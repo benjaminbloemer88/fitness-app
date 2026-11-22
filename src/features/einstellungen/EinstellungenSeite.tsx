@@ -9,6 +9,7 @@ import { Stepper } from '../../components/Stepper';
 import { erstelleBackup, loescheAlles, pruefeBackup, spieleBackupEin } from '../../db/backup';
 import { db } from '../../db/db';
 import { neuesterPlan, testplanLaden } from '../../db/einheiten';
+import { regelEntfernen, useErsetzungen } from '../../db/ersetzungen';
 import { speichereEinstellungen, syncEingerichtet, useEinstellungen, type Einstellungen } from '../../db/einstellungen';
 import { formatDauer } from '../../domain/calc';
 import { heuteISO, isoZuDeutsch } from '../../domain/dates';
@@ -24,6 +25,7 @@ export function EinstellungenSeite() {
   const dienst = useSyncDienst();
   const online = useOnline();
   const plan = useLiveQuery(() => neuesterPlan(), []);
+  const regeln = useErsetzungen().filter((r) => r.planDatum === null);
   const dateiEingabe = useRef<HTMLInputElement>(null);
   const [meldung, setMeldung] = useState<{ text: string; art: 'ok' | 'fehler' } | null>(null);
   const setze = (teil: Partial<Einstellungen>) => void speichereEinstellungen(teil);
@@ -113,6 +115,27 @@ export function EinstellungenSeite() {
           <input type="checkbox" checked={e.ton} onChange={(x) => setze({ ton: x.target.checked })} />
         </label>
         <Stepper label="Körpergewicht" wert={e.koerpergewichtKg} schritt={0.5} min={30} max={250} einheit="kg" onChange={(w) => w !== null && setze({ koerpergewichtKg: w })} />
+      </section>
+
+      <section className="karte">
+        <h2>Übungen immer ersetzen</h2>
+        {regeln.length === 0 ? (
+          <p className="klein gedaempft">
+            Keine Regeln. Tipp im Plan oder im Training auf eine Übung → Alternative wählen → „Immer ersetzen“ anhaken.
+          </p>
+        ) : (
+          regeln.map((r) => (
+            <div key={r.id} className="zeile zwischen">
+              <span>
+                {r.original} <span className="gedaempft">→</span> <span className="fett">{r.ersatz}</span>
+              </span>
+              <button className="knopf leise" onClick={() => void regelEntfernen(r.original)}>
+                Entfernen
+              </button>
+            </div>
+          ))
+        )}
+        <p className="klein gedaempft">Gilt nur in der App. Im Log steht „getauscht: … → …“, so erfährt es der Coach.</p>
       </section>
 
       <section className="karte">

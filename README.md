@@ -21,6 +21,7 @@ wöchentliche „Trainingscoach“ pflegt.
 | Import der Log-Zeilen für den Verlauf, Nachkontrolle eigener Zeilen | ✅ |
 | Trainingstage verschieben / tauschen / „Heute machen“ (nur lokal, Plan im Doc bleibt) | ✅ |
 | Übungs-Infos: Fotos, Muskeln, Ausführung, Tipp (43 Übungen, offline vorgeladen) | ✅ |
+| Übungen tauschen: Alternativen nach Bewegungsmuster, im Plan oder im Workout, optional „immer ersetzen“ | ✅ |
 
 Ohne eingerichtete Brücke nutzt die App den Plan 23.–29.11.2026 als Testdaten; alles, was du
 erfasst, wartet lokal und wird nach der Einrichtung automatisch ins Doc übertragen.

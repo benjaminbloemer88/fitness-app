@@ -8,6 +8,9 @@ import { IconZurueck } from '../../components/Icons';
 import { db } from '../../db/db';
 import { aktualisiereEinheit, letzteLeistung, loescheEinheit, type LetzteLeistung } from '../../db/einheiten';
 import { useEinstellungen } from '../../db/einstellungen';
+import { ersetzungSpeichern, regelEntfernen, useErsetzungen } from '../../db/ersetzungen';
+import { regelFuer } from '../../domain/ersetzungen';
+import { istKoerpergewichtsUebung } from '../../domain/uebungsKatalog';
 import { formatTagKurz } from '../../domain/dates';
 import { uebungsSchluessel, type UebungErgebnis } from '../../domain/einheit';
 import { useEinheit } from '../../hooks/daten';
@@ -22,6 +25,7 @@ export function TrainingSeite() {
   const einheit = useEinheit(id);
   const einstellungen = useEinstellungen();
   const timer = usePausenTimer();
+  const ersetzungen = useErsetzungen();
   useWakeLock(einstellungen.bildschirmAn);
 
   // Die Übungen halten wir während des Trainings im Speicher (schnell, keine verlorenen Tipps)
@@ -118,6 +122,23 @@ export function TrainingSeite() {
     setNeueUebung('');
   };
 
+  /**
+   * Übung gegen eine Alternative tauschen: Name ändern, Gewicht der offenen Sätze
+   * auf das letzte eigene Gewicht der neuen Übung setzen (sonst leer), Tausch merken.
+   */
+  const tauschen = async (index: number, neu: string, immer: boolean) => {
+    const u = uebungen[index];
+    if (!u) return;
+    const original = u.planName ?? u.name;
+    const zurueck = u.planName !== null && uebungsSchluessel(neu) === uebungsSchluessel(original);
+    const vorher = await letzteLeistung(neu, einheit.id);
+    const letztesKg = vorher?.saetze.at(-1)?.kg ?? null;
+    const kg = zurueck ? (u.ziel?.gewichtKg ?? letztesKg) : letztesKg;
+    const koerpergewicht = istKoerpergewichtsUebung(neu) || (zurueck && /körpergewicht/i.test(u.ziel?.hinweis ?? ''));
+    setUebungen((alt) => alt!.map((x, i) => (i === index ? { ...x, name: neu, koerpergewicht, saetze: x.saetze.map((s) => (s.erledigt ? s : { ...s, kg })) } : x)));
+    await ersetzungSpeichern(u.planName ? einheit.planDatum : null, original, neu, immer);
+  };
+
   const verwerfen = async () => {
     if (!window.confirm('Dieses Training komplett verwerfen? Die erfassten Sätze gehen verloren.')) return;
     timer.stoppen();
@@ -162,6 +183,9 @@ export function TrainingSeite() {
             setUebungen((alt) => alt!.filter((_, j) => j !== i));
             setOffen(null);
           }}
+          onTauschen={(neu, immer) => tauschen(i, neu, immer)}
+          regelAktiv={regelFuer(ersetzungen, u.planName ?? u.name) !== null}
+          onRegelLoeschen={() => regelEntfernen(u.planName ?? u.name)}
         />
       ))}
 

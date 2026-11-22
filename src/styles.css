@@ -722,6 +722,34 @@ input[type='range'].regler {
   padding: 8px;
   background: var(--flaeche-2);
 }
+.alternative {
+  appearance: none;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--rand);
+  background: var(--flaeche-2);
+  text-align: left;
+  cursor: pointer;
+  min-height: 64px;
+}
+img.mini,
+.foto-platzhalter.mini {
+  width: 56px;
+  height: 56px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0;
+}
+.foto-platzhalter.mini {
+  background: var(--flaeche);
+}
 .ausfuehrung {
   margin: 0;
   padding-left: 20px;

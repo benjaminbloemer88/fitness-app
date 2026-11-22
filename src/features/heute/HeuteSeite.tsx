@@ -74,7 +74,7 @@ export function HeuteSeite() {
       {/* Einheiten, die heute stattfinden (auch hierher verschobene) */}
       {heuteGeplant.map((e) => (
         <section key={e.tag.datum} className="stapel">
-          <PlanTagKarte tag={e.tag} hervorheben />
+          <PlanTagKarte tag={e.tag} hervorheben tauschbar />
           <TagAktionen eintrag={e} heute={heute} />
         </section>
       ))}
@@ -105,7 +105,7 @@ export function HeuteSeite() {
       {heuteGeplant.length === 0 && naechste && (
         <>
           <h2 style={{ marginTop: 8 }}>Nächste Einheit</h2>
-          <PlanTagKarte tag={naechste.tag} zeigeDatum datum={naechste.datum} />
+          <PlanTagKarte tag={naechste.tag} zeigeDatum datum={naechste.datum} tauschbar />
           <Link className="knopf block" to={`/tag/${naechste.tag.datum}`}>
             Ansehen · {formatTagKurz(naechste.datum)}
           </Link>

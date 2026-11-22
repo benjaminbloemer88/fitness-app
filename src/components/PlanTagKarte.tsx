@@ -1,17 +1,20 @@
 /**
  * Zeigt einen Plantag: Titel, Dauer, Hinweis und die Übungen bzw. den Lauf mit Zielwerten.
- * Ein Tipp auf eine Übung öffnet die Übungs-Infos (Fotos, Ausführung, Tipp).
+ * Ein Tipp auf eine Übung öffnet die Übungs-Infos. Mit `tauschbar` kann man dort
+ * eine Alternative wählen; getauschte Übungen erscheinen dann hier mit „statt …“.
  */
 import { useState } from 'react';
+import { regelEntfernen, uebungTauschen, useErsetzungen } from '../db/ersetzungen';
 import { formatDezimal } from '../domain/calc';
 import { formatTagLang } from '../domain/dates';
+import { regelFuer, uebungenMitErsetzungen, type AngezeigteUebung } from '../domain/ersetzungen';
 import type { PlanTag, Uebung } from '../domain/planSchema';
 import { UebungsInfoDialog } from './UebungsInfoDialog';
 
-/** „3 × 8 × 57,5 kg“, „3 × 12“ */
-export function zielText(u: Uebung): string {
+/** „3 × 8 × 57,5 kg“, „3 × 12“ – bei getauschten Übungen ohne Zielgewicht */
+export function zielText(u: Uebung, ersetzt = false): string {
   const basis = `${u.saetze} × ${u.wdh}`;
-  if (u.gewicht_kg !== null) return `${basis} × ${formatDezimal(u.gewicht_kg)} kg`;
+  if (u.gewicht_kg !== null && !ersetzt) return `${basis} × ${formatDezimal(u.gewicht_kg)} kg`;
   return basis;
 }
 
@@ -21,10 +24,18 @@ interface Props {
   /** Anzuzeigendes Datum, falls die Einheit verschoben wurde (sonst das Plandatum). */
   datum?: string;
   hervorheben?: boolean;
+  /** Übungen tauschen erlauben (und getauschte anzeigen). Aus für die reine Plan-Ansicht. */
+  tauschbar?: boolean;
 }
 
-export function PlanTagKarte({ tag, zeigeDatum = false, datum, hervorheben = false }: Props) {
-  const [info, setInfo] = useState<string | null>(null);
+export function PlanTagKarte({ tag, zeigeDatum = false, datum, hervorheben = false, tauschbar = false }: Props) {
+  const [info, setInfo] = useState<number | null>(null);
+  const ersetzungen = useErsetzungen();
+  const liste: AngezeigteUebung[] = tauschbar
+    ? uebungenMitErsetzungen(tag, ersetzungen)
+    : tag.uebungen.map((u) => ({ original: u, name: u.name, ersetzung: null }));
+  const offen = info !== null ? liste[info] : undefined;
+
   return (
     <section className={`karte${hervorheben ? ' hervorgehoben' : ''}`}>
       <div className="zeile zwischen">
@@ -41,21 +52,27 @@ export function PlanTagKarte({ tag, zeigeDatum = false, datum, hervorheben = fal
       </div>
       {tag.hinweis && <p className="gedaempft klein">{tag.hinweis}</p>}
 
-      {tag.uebungen.length > 0 && (
+      {liste.length > 0 && (
         <ul className="uebungsliste">
-          {tag.uebungen.map((u, i) => (
-            <li key={`${u.name}-${i}`}>
-              <button className="uebung-zeile" onClick={() => setInfo(u.name)} aria-label={`${u.name}: Infos anzeigen`}>
+          {liste.map((a, i) => (
+            <li key={`${a.original.name}-${i}`}>
+              <button className="uebung-zeile" onClick={() => setInfo(i)} aria-label={`${a.name}: Infos${tauschbar ? ' und tauschen' : ''}`}>
                 <div>
                   <div className="fett">
-                    {u.name}
+                    {a.name}
                     <i className="info-punkt" aria-hidden="true">
                       i
                     </i>
                   </div>
-                  {u.hinweis && <div className="klein gedaempft">{u.hinweis}</div>}
+                  {a.ersetzung ? (
+                    <div className="klein" style={{ color: 'var(--info)' }}>
+                      ⇄ statt {a.original.name}
+                    </div>
+                  ) : (
+                    a.original.hinweis && <div className="klein gedaempft">{a.original.hinweis}</div>
+                  )}
                 </div>
-                <div className="ziel">{zielText(u)}</div>
+                <div className="ziel">{zielText(a.original, a.ersetzung !== null)}</div>
               </button>
             </li>
           ))}
@@ -79,7 +96,23 @@ export function PlanTagKarte({ tag, zeigeDatum = false, datum, hervorheben = fal
         </div>
       )}
 
-      {info && <UebungsInfoDialog name={info} onSchliessen={() => setInfo(null)} />}
+      {offen && (
+        <UebungsInfoDialog
+          name={offen.name}
+          onSchliessen={() => setInfo(null)}
+          tausch={
+            tauschbar
+              ? {
+                  original: offen.original.name,
+                  aktuell: offen.name,
+                  regelAktiv: regelFuer(ersetzungen, offen.original.name) !== null,
+                  onWaehlen: (neu, immer) => uebungTauschen(tag.datum, offen.original.name, neu, immer),
+                  onRegelLoeschen: () => regelEntfernen(offen.original.name),
+                }
+              : undefined
+          }
+        />
+      )}
     </section>
   );
 }
