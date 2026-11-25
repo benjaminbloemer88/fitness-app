@@ -559,6 +559,112 @@ input[type='range'].regler {
   font-variant-numeric: tabular-nums;
 }
 
+/* ───────── Heute ───────── */
+
+.heute-kopf {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: start;
+}
+.heute-kopf .datum {
+  color: var(--text-2);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.heute-kopf h1 {
+  font-size: 1.8rem;
+  margin: 2px 0;
+}
+.heute-kopf .meta {
+  color: var(--text-2);
+  font-size: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+}
+.uebungs-reihen {
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-radius: 16px;
+  padding: 2px 12px;
+}
+.uebung-reihe {
+  appearance: none;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--rand);
+  display: grid;
+  grid-template-columns: 52px 1fr 32px;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  min-height: 72px;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+.uebung-reihe:last-child {
+  border-bottom: none;
+}
+.uebung-reihe .name {
+  font-weight: 700;
+}
+.uebung-reihe .meta {
+  font-size: 0.85rem;
+  color: var(--text-2);
+}
+.uebung-reihe .text {
+  min-width: 0;
+}
+/* Lange Hinweise auf eine Zeile kürzen – vollständig im Info-Pop-up */
+.uebung-reihe .einzeilig {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.uebung-reihe svg.tauschen {
+  color: var(--text-2);
+  width: 22px;
+  height: 22px;
+}
+.thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: #fff;
+  display: block;
+}
+.thumb-leer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--flaeche-2);
+  color: var(--text-2);
+}
+.start-leiste {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--nav-hoehe) + env(safe-area-inset-bottom));
+  z-index: 25;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--rand);
+}
+.start-leiste > * {
+  max-width: 608px;
+  margin: 0 auto;
+}
+.seite.mit-startleiste {
+  padding-bottom: calc(var(--nav-hoehe) + 110px + env(safe-area-inset-bottom));
+}
+
 /* ───────── Woche (Wochenleiste + Karten) ───────── */
 
 .wochen-navi {

@@ -99,6 +99,11 @@ export function formatTagLang(iso: string): string {
   return `${WOCHENTAGE_LANG[wochentagIndex(iso)]}, ${tag}. ${MONATE[monat - 1]}`;
 }
 
+/** „2026-11-23“ → „November“ */
+export function monatsName(iso: string): string {
+  return MONATE[zerlegeIso(iso).monat - 1] ?? '';
+}
+
 /** „2026-11-23“ → „Mo 23.11.“ */
 export function formatTagKurz(iso: string): string {
   return `${WOCHENTAGE_KURZ[wochentagIndex(iso)]} ${isoZuKurz(iso)}`;

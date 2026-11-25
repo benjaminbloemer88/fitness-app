@@ -12,27 +12,14 @@ import { db } from '../../db/db';
 import { usePlanung } from '../../db/verschiebungen';
 import { formatDezimal } from '../../domain/calc';
 import { formatTagKurz, isoZuDeutsch, isoZuKurz, montagDerWoche, plusTage, WOCHENTAGE_KURZ, zerlegeIso } from '../../domain/dates';
-import type { Einheit } from '../../domain/einheit';
 import type { EffektiveEinheit } from '../../domain/wochenplan';
 import { useHeute } from '../../hooks/daten';
+import { kurzTitel as kurzTitelVonTag, planStatus } from '../../lib/anzeige';
 
 const QUELLE_TEXT = { json: 'Plan aus Plan-Daten (JSON)', tabelle: 'Plan aus der Plantabelle', testdaten: 'Testdaten' } as const;
 
-type Status = 'erledigt' | 'ausgelassen' | 'laeuft' | 'offen';
-
-function statusVon(planDatum: string, einheiten: Einheit[]): Status {
-  const zumTag = einheiten.filter((e) => e.planDatum === planDatum);
-  if (zumTag.some((e) => e.status === 'abgeschlossen')) return 'erledigt';
-  if (zumTag.some((e) => e.status === 'ausgelassen')) return 'ausgelassen';
-  if (zumTag.some((e) => e.status === 'laeuft')) return 'laeuft';
-  return 'offen';
-}
-
-/** „Gym C – Ganzkörper“ → „Gym C“, Läufe → „Lauf locker“ */
-function kurzTitel(e: EffektiveEinheit): string {
-  if (e.tag.typ === 'lauf') return `Lauf ${e.tag.lauf?.art ?? ''}`.trim();
-  return e.tag.titel.split(' – ')[0] ?? e.tag.titel;
-}
+const statusVon = planStatus;
+const kurzTitel = (e: EffektiveEinheit) => kurzTitelVonTag(e.tag);
 
 function TypIcon({ typ }: { typ: 'gym' | 'lauf' | 'ruhe' }) {
   return <div className={`icon-kachel ${typ === 'lauf' ? 'lauf' : 'gym'}`}>{typ === 'lauf' ? <IconLauf /> : <IconHeute />}</div>;

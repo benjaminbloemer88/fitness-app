@@ -63,6 +63,12 @@ export const IconLauf = (p: SVGProps<SVGSVGElement>) => (
     <path d="M4 17l5 1l.75 -1.5M15 21l0 -4l-4 -3l1 -6M7 12l0 -3l5 -1l3 3l3 1" />
   </svg>
 );
+/** Zwei Pfeile gegeneinander – „tauschen“ */
+export const IconTauschen = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...basis(p)}>
+    <path d="M7 10h14l-4-4M17 14H3l4 4" />
+  </svg>
+);
 export const IconKreuz = (p: SVGProps<SVGSVGElement>) => (
   <svg {...basis(p)}>
     <path d="M6 6l12 12M18 6L6 18" />
