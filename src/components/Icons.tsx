@@ -56,6 +56,18 @@ export const IconMehr = (p: SVGProps<SVGSVGElement>) => (
     <circle cx="19" cy="12" r="1.2" fill="currentColor" />
   </svg>
 );
+/** Läufer (Form nach Tabler Icons „run“, MIT-Lizenz) */
+export const IconLauf = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...basis(p)}>
+    <circle cx="14" cy="4" r="1" />
+    <path d="M4 17l5 1l.75 -1.5M15 21l0 -4l-4 -3l1 -6M7 12l0 -3l5 -1l3 3l3 1" />
+  </svg>
+);
+export const IconKreuz = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...basis(p)}>
+    <path d="M6 6l12 12M18 6L6 18" />
+  </svg>
+);
 export const IconSync = (p: SVGProps<SVGSVGElement>) => (
   <svg {...basis(p)}>
     <path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 13a8 8 0 0 0 14.3 4.9L20 16M4 4v4h4M20 20v-4h-4" />

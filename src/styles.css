@@ -20,6 +20,9 @@
   --schatten: 0 6px 24px rgb(0 0 0 / 0.35);
   --radius: 16px;
   --nav-hoehe: 68px;
+  /* Farben nach Art der Einheit */
+  --gym: var(--akzent);
+  --lauf: var(--info);
   /* Diagramm-Farben (validierte Palette, dunkle Stufen) */
   --serie-1: #3987e5;
   --serie-2: #d95926;
@@ -556,7 +559,173 @@ input[type='range'].regler {
   font-variant-numeric: tabular-nums;
 }
 
-/* ───────── Woche ───────── */
+/* ───────── Woche (Wochenleiste + Karten) ───────── */
+
+.wochen-navi {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  text-align: center;
+}
+.wochen-navi .knopf {
+  min-height: 40px;
+  min-width: 40px;
+}
+.wochenleiste {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.tag-pill {
+  appearance: none;
+  border: none;
+  background: var(--flaeche);
+  border-radius: 14px;
+  padding: 8px 0 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 64px;
+  cursor: pointer;
+  color: var(--text);
+}
+.tag-pill:disabled {
+  cursor: default;
+}
+.tag-pill .wt {
+  font-size: 0.75rem;
+  color: var(--text-2);
+}
+.tag-pill .nr {
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.tag-pill.heute {
+  background: var(--akzent);
+  color: var(--akzent-text);
+}
+.tag-pill.heute .wt {
+  color: var(--akzent-text);
+}
+.punkte {
+  display: flex;
+  gap: 3px;
+  height: 8px;
+  align-items: center;
+}
+.punkt {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  border: 2px solid var(--farbe);
+}
+.punkt.voll {
+  background: var(--farbe);
+}
+.punkt.gym {
+  --farbe: var(--gym);
+}
+.punkt.lauf {
+  --farbe: var(--lauf);
+}
+.punkt.ausgelassen {
+  --farbe: var(--fehler);
+}
+.punkt.verpasst {
+  --farbe: var(--warn);
+}
+.tag-pill.heute .punkt {
+  --farbe: var(--akzent-text);
+}
+.abschnitt-titel {
+  font-size: 0.85rem;
+  color: var(--text-2);
+  font-weight: 600;
+  margin: 6px 2px -4px;
+}
+.einheit-karte {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  min-height: 72px;
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-radius: 16px;
+  color: inherit;
+  text-decoration: none;
+}
+.einheit-karte.naechste {
+  border-color: var(--akzent);
+}
+.einheit-karte .titel {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.einheit-karte .meta {
+  font-size: 0.85rem;
+  color: var(--text-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+}
+.icon-kachel {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--farbe);
+  background: color-mix(in srgb, var(--farbe) 16%, transparent);
+}
+.icon-kachel svg {
+  width: 26px;
+  height: 26px;
+}
+.icon-kachel.gym {
+  --farbe: var(--gym);
+}
+.icon-kachel.lauf {
+  --farbe: var(--lauf);
+}
+.mini-chip {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+.erledigt-liste {
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-radius: 16px;
+  padding: 2px 14px;
+}
+.erledigt-zeile {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  border-bottom: 1px solid var(--rand);
+  color: inherit;
+  text-decoration: none;
+}
+.erledigt-zeile:last-child {
+  border-bottom: none;
+}
+.erledigt-zeile svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* ───────── Woche (alte Zeilen, für Tagesdetails) ───────── */
 
 .wochentag {
   display: grid;
