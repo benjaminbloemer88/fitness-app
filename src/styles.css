@@ -1033,6 +1033,211 @@ img.mini,
   gap: 6px;
 }
 
+/* ───────── Verlauf: eigenes Diagramm ───────── */
+
+.vd {
+  width: 100%;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.vd svg {
+  display: block;
+  overflow: visible;
+  cursor: crosshair;
+}
+.vd svg:focus {
+  outline: none;
+}
+.vd svg:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+.vd-raster {
+  stroke: var(--raster);
+  stroke-width: 1;
+}
+.vd-achse {
+  fill: var(--achse);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.vd-achse.aktiv {
+  fill: var(--text);
+  font-weight: 700;
+}
+.vd-linie {
+  fill: none;
+  stroke: var(--serie-1);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.vd-punkt {
+  fill: var(--serie-1);
+}
+.vd-balken {
+  fill: var(--serie-1);
+  opacity: 0.45;
+}
+.vd-balken.aktiv {
+  opacity: 1;
+}
+.vd-markierung {
+  stroke: var(--achse);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.vd-auswahl {
+  fill: var(--bg);
+  stroke: var(--akzent);
+  stroke-width: 2.5;
+}
+.sparkline {
+  width: 72px;
+  height: 24px;
+  overflow: visible;
+}
+.sparkline polyline {
+  fill: none;
+  stroke: var(--farbe, var(--achse));
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.sparkline circle {
+  fill: var(--farbe, var(--achse));
+}
+.sparkline.hoch {
+  --farbe: var(--ok);
+}
+.sparkline.lauf {
+  --farbe: var(--lauf);
+}
+
+/* ───────── Verlauf: Übersicht und Detail ───────── */
+
+.kennzahlen {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.kennzahl {
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+.kennzahl .wert {
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.kennzahl .wert small {
+  font-size: 0.85rem;
+  color: var(--text-2);
+  font-weight: 600;
+}
+.trend-karte {
+  display: grid;
+  grid-template-columns: 1fr 72px 64px;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  min-height: 64px;
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-radius: 14px;
+  color: inherit;
+  text-decoration: none;
+}
+.trend-karte .wert {
+  font-size: 0.85rem;
+  color: var(--text-2);
+}
+.trend {
+  text-align: right;
+  font-weight: 700;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+}
+.trend.hoch {
+  color: var(--ok);
+}
+.trend.lauf {
+  color: var(--lauf);
+}
+.bestleistung {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rand);
+}
+.bestleistung:last-child {
+  border-bottom: none;
+}
+.bestleistung svg {
+  color: var(--akzent);
+}
+.segment {
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-radius: 12px;
+  padding: 3px;
+}
+.segment button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-weight: 700;
+  border-radius: 9px;
+  min-height: 40px;
+  cursor: pointer;
+}
+.segment button.aktiv {
+  background: var(--flaeche-2);
+  color: var(--text);
+}
+.anzeige-wert {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.anzeige-wert small {
+  font-size: 1rem;
+  color: var(--text-2);
+  font-weight: 600;
+}
+.verlauf-zeile {
+  appearance: none;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--rand);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 2px;
+  min-height: 48px;
+  align-items: center;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.verlauf-zeile:last-child {
+  border-bottom: none;
+}
+.verlauf-zeile.aktiv {
+  color: var(--akzent);
+}
+
 /* ───────── Diagramme ───────── */
 
 .diagramm {

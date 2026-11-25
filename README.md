@@ -13,7 +13,7 @@ wöchentliche „Trainingscoach“ pflegt.
 | Teil | Status |
 |---|---|
 | Heute, Workout-Modus, Lauf, Abschluss, Ausgelassen, Woche | ✅ |
-| Verlauf (Top-Gewicht, 1RM, Volumen, Pace, Gefühl, Einheiten/Woche) | ✅ |
+| Verlauf: Kennzahlen, neue Bestleistungen, Mini-Kurven je Übung; Detail mit Gewicht/Volumen/Wdh., Pace, Gefühl, Einheiten/Woche (eigene SVG-Diagramme, Tippen/Wischen statt Pop-up) | ✅ |
 | Einstellungen, Backup (Export/Import JSON) | ✅ |
 | Apps-Script-Brücke (`apps-script/Code.gs`) | ✅ inkl. Tests gegen ein nachgebautes Doc |
 | Plan aus dem Doc lesen (JSON + Fallback-Tabelle), einmalige Plan-Daten-Erzeugung | ✅ |
@@ -60,7 +60,7 @@ npm run build      # Produktions-Build nach dist/
 ```
 src/
   domain/      reine Logik (getestet): Plan-Schema, JSON-Extraktion, Tabellen-Parser,
-               Log-Format, Log-Parser, Pace/1RM/Volumen, Verlauf
+               Log-Format, Log-Parser, Pace/Volumen, Verlauf und Bestleistungen
   db/          Dexie-Datenbank, Einheiten/Pläne, Einstellungen, Backup
   sync/        Sync-Warteschlange, Brücken-Client, Abgleich, automatischer Sync
   features/    Seiten: heute, tag, training, lauf, abschluss, woche, verlauf, einstellungen

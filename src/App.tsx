@@ -27,6 +27,7 @@ import { useBilderVorladen } from './lib/bilderVorladen';
 // Der Verlauf (mit der großen Diagramm-Bibliothek) wird erst beim Öffnen geladen → schnellerer Start.
 // Offline klappt das trotzdem, weil der Service Worker alle Dateien vorab cacht.
 const VerlaufSeite = lazy(() => import('./features/verlauf/VerlaufSeite').then((m) => ({ default: m.VerlaufSeite })));
+const VerlaufDetailSeite = lazy(() => import('./features/verlauf/VerlaufDetailSeite').then((m) => ({ default: m.VerlaufDetailSeite })));
 
 /** Seiten, auf denen die Navigation unten ausgeblendet wird (Vollbild-Abläufe). */
 const OHNE_NAV = ['/training/', '/lauf/', '/abschluss/', '/auslassen/', '/plan-daten'];
@@ -58,6 +59,14 @@ function Layout() {
           element={
             <Suspense fallback={<main className="seite gedaempft">Lade Verlauf …</main>}>
               <VerlaufSeite />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/verlauf/:art/:name?"
+          element={
+            <Suspense fallback={<main className="seite gedaempft">Lade Verlauf …</main>}>
+              <VerlaufDetailSeite />
             </Suspense>
           }
         />

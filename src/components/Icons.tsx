@@ -69,6 +69,12 @@ export const IconTauschen = (p: SVGProps<SVGSVGElement>) => (
     <path d="M7 10h14l-4-4M17 14H3l4 4" />
   </svg>
 );
+/** Pokal – Bestleistung */
+export const IconPokal = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...basis(p)}>
+    <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM5 9a2 2 0 0 1-2-2V5h4M19 9a2 2 0 0 0 2-2V5h-4" />
+  </svg>
+);
 export const IconKreuz = (p: SVGProps<SVGSVGElement>) => (
   <svg {...basis(p)}>
     <path d="M6 6l12 12M18 6L6 18" />

@@ -1,8 +1,8 @@
 /**
  * Berechnet die Datenreihen für den Verlauf aus lokalen Einheiten und
- * (später) aus dem Doc importierten Log-Zeilen.
+ * aus dem Doc importierten Log-Zeilen.
  */
-import { epley1RM, paceSekProKm, volumen } from './calc';
+import { formatDezimal, formatPace, paceSekProKm, volumen } from './calc';
 import { montagDerWoche } from './dates';
 import { uebungsSchluessel, type Einheit } from './einheit';
 import { parseLogZeile, type GeparsterInhalt } from './logParse';
@@ -63,27 +63,95 @@ export function fuehreZusammen(
 
 export interface UebungsPunkt {
   datum: string;
+  /** schwerstes Gewicht des Tages (0 = nur Körpergewicht) */
   topKg: number;
-  e1rm: number;
+  /** meiste Wiederholungen mit dem Top-Gewicht */
+  wdhBeiTop: number;
+  /** Summe aller Wiederholungen */
+  wdhGesamt: number;
+  /** Summe Gewicht × Wiederholungen */
   volumen: number;
+  /** alle Sätze des Tages (für die Anzeige „3×12×50 kg“) */
+  saetze: { kg: number | null; wdh: number }[];
 }
 
-/** Pro Tag: Top-Gewicht, bestes geschätztes 1RM (Epley), Volumen. */
+/** Pro Tag: Top-Gewicht (mit Wdh.), Wiederholungen gesamt, Volumen. */
 export function uebungsVerlauf(eintraege: VerlaufsEintrag[], name: string): UebungsPunkt[] {
   const schluessel = uebungsSchluessel(name);
   const proTag = new Map<string, UebungsPunkt>();
   for (const e of eintraege) {
     for (const u of e.uebungen) {
       if (uebungsSchluessel(u.name) !== schluessel) continue;
-      const mitGewicht = u.saetze.filter((s) => (s.kg ?? 0) > 0);
-      const punkt = proTag.get(e.datum) ?? { datum: e.datum, topKg: 0, e1rm: 0, volumen: 0 };
-      punkt.topKg = Math.max(punkt.topKg, ...mitGewicht.map((s) => s.kg as number), 0);
-      punkt.e1rm = Math.max(punkt.e1rm, ...mitGewicht.map((s) => epley1RM(s.kg as number, s.wdh)), 0);
-      punkt.volumen += volumen(u.saetze);
+      const punkt = proTag.get(e.datum) ?? { datum: e.datum, topKg: 0, wdhBeiTop: 0, wdhGesamt: 0, volumen: 0, saetze: [] };
+      punkt.saetze.push(...u.saetze);
+      punkt.topKg = Math.max(0, ...punkt.saetze.map((s) => s.kg ?? 0));
+      punkt.wdhBeiTop = Math.max(0, ...punkt.saetze.filter((s) => (s.kg ?? 0) === punkt.topKg).map((s) => s.wdh));
+      punkt.wdhGesamt = punkt.saetze.reduce((n, s) => n + s.wdh, 0);
+      punkt.volumen = volumen(punkt.saetze);
       proTag.set(e.datum, punkt);
     }
   }
   return [...proTag.values()].sort((a, b) => a.datum.localeCompare(b.datum));
+}
+
+/** Nur Punkte ab einem Datum (Zeitraum-Filter); `null` = alle. */
+export function abDatum<T extends { datum: string }>(punkte: T[], ab: string | null): T[] {
+  return ab ? punkte.filter((p) => p.datum >= ab) : punkte;
+}
+
+export interface Bestleistung {
+  datum: string;
+  titel: string;
+  text: string;
+  art: 'gewicht' | 'volumen' | 'pace' | 'distanz';
+}
+
+/**
+ * Neue Bestleistungen: Einheiten, die eine frühere Bestmarke übertroffen haben
+ * (die allererste Einheit einer Übung zählt nicht – sie setzt nur die Basis).
+ * Gewicht: schwerer – oder gleich schwer mit mehr Wiederholungen. Lauf: schnellste Pace (ab 3 km), längste Strecke.
+ */
+export function bestleistungen(eintraege: VerlaufsEintrag[], seit: string): Bestleistung[] {
+  const ergebnis: Bestleistung[] = [];
+  for (const name of uebungsNamen(eintraege)) {
+    let besteKg: { kg: number; wdh: number } | null = null;
+    let bestesVolumen: number | null = null;
+    for (const p of uebungsVerlauf(eintraege, name)) {
+      if (p.topKg > 0) {
+        const besser = besteKg && (p.topKg > besteKg.kg || (p.topKg === besteKg.kg && p.wdhBeiTop > besteKg.wdh));
+        if (besser && p.datum >= seit) {
+          ergebnis.push({ datum: p.datum, titel: `${name} · ${formatDezimal(p.topKg)} kg × ${p.wdhBeiTop}`, text: 'schwerster Satz bisher', art: 'gewicht' });
+        }
+        if (!besteKg || besser) besteKg = { kg: p.topKg, wdh: p.wdhBeiTop };
+      }
+      if (p.volumen > 0) {
+        if (bestesVolumen !== null && p.volumen > bestesVolumen && p.datum >= seit) {
+          ergebnis.push({ datum: p.datum, titel: `${name} · ${formatTausend(p.volumen)} kg`, text: 'meistes Volumen bisher', art: 'volumen' });
+        }
+        bestesVolumen = Math.max(bestesVolumen ?? 0, p.volumen);
+      }
+    }
+  }
+  let bestePace: number | null = null;
+  let weiteste: number | null = null;
+  for (const l of paceVerlauf(eintraege)) {
+    if (l.km >= 3) {
+      if (bestePace !== null && l.paceSek < bestePace && l.datum >= seit) {
+        ergebnis.push({ datum: l.datum, titel: `Lauf · ${formatPace(l.paceSek)} /km`, text: `schnellste Pace bisher (${formatDezimal(l.km)} km)`, art: 'pace' });
+      }
+      bestePace = Math.min(bestePace ?? Infinity, l.paceSek);
+    }
+    if (weiteste !== null && l.km > weiteste && l.datum >= seit) {
+      ergebnis.push({ datum: l.datum, titel: `Lauf · ${formatDezimal(l.km)} km`, text: 'längster Lauf bisher', art: 'distanz' });
+    }
+    weiteste = Math.max(weiteste ?? 0, l.km);
+  }
+  return ergebnis.sort((a, b) => b.datum.localeCompare(a.datum));
+}
+
+/** 1600 → „1.600“ */
+export function formatTausend(n: number): string {
+  return Math.round(n).toLocaleString('de-DE');
 }
 
 /** Alle Übungen mit mindestens einem gewichteten Satz, häufigste zuerst. */
